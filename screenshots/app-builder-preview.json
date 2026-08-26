@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "ATLAS TÁCTICO",
+      "hasCanvas": false,
+      "bodyTextLen": 955,
+      "bodyTextHash": "3b9ac91a80bca16f47116a3ebd4673ad6d0cad592999813551c2208c10518203",
+      "bodyTextPrefix": "CATÁLOGO DE EQUIPO TÁCTICO · PERSONAL MILITAR Y DE SEGURIDAD ATL",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "ATLAS TÁCTICO",
+      "hasCanvas": false,
+      "bodyTextLen": 828,
+      "bodyTextHash": "08f67e1c29f9f01a244400ee755c922357513e4d3f6d21bc88152566f1af300c",
+      "bodyTextPrefix": "ATLAS TÁCTICO EQUIPO DE SERVICIO Catálogo táctico para quien sir",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
