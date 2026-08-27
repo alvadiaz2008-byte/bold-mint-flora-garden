@@ -1,5 +1,32 @@
+# dependencies
 node_modules/
-.project_id
-.github_repo
+
+# secrets / local identity
 .env
 .env.*
+.github_repo
+.project_id
+
+# Grok App Builder internals (local sandbox only)
+.grok/
+AGENTS.md
+AGENTS.project.md
+startup.sh
+.node_modules.lock
+
+# build output
+.vercel/
+dist/
+.output/
+.tanstack/
+*.log
+
+# QA / generated artifacts
+screenshots/
+artifacts/
+*.tsbuildinfo
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
