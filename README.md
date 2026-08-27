@@ -2,46 +2,33 @@
 
 Catálogo web de ropa y equipo táctico para personal militar. Precios en soles (PEN).
 
+La tienda pública en GitHub es el archivo [index.html](index.html). GitHub Pages la publica en:
+
+**https://alvadiaz2008-byte.github.io/frost-slate-lilac-yarrow001/**
+
 ## Qué incluye
 
 - Catálogo con filtros por categoría y búsqueda
-- Ficha de producto (galería, tallas, colores, descripción)
-- Panel de administrador con contraseña para añadir, editar y eliminar productos
-- Los productos nuevos aparecen al instante en el catálogo
+- Ficha de producto (galería, tallas, colores, stock)
+- Pedido con datos del comprador y dirección; al confirmar se abre WhatsApp (+51 955 802 712) con el mensaje y se descuenta el stock
+- Panel de administrador (contraseña `589`) para editar prendas y el contador de unidades
 
-## Estructura
+## Archivos de la web (GitHub Pages)
 
 ```text
-src/
-  routes/          páginas (inicio, catálogo, producto, admin)
-  components/      interfaz (tarjetas, ficha, panel admin)
-  lib/             datos del catálogo y utilidades
-public/            favicon e imagen de compartir
-migrations/        esquema y productos de ejemplo
+index.html       página que GitHub ejecuta
+web/styles.css   diseño
+web/app.js       catálogo, compra y administrador
+web/products.js  prendas iniciales
 ```
 
-## Cómo ejecutarlo
+No hace falta instalar Node para verla: GitHub Pages sirve esos archivos tal cual.
 
-Necesitas Node.js 22+.
+## Desarrollo local (opcional)
+
+Si clonas el repositorio y quieres el servidor de desarrollo:
 
 ```bash
 npm install
 npm run dev
 ```
-
-Luego abre la URL que muestre la terminal (por defecto el puerto 8080).
-
-```bash
-npm run build      # producción
-npm run typecheck  # tipos
-```
-
-## Administrador
-
-En el menú: **Administrador**. Contraseña: `589`.
-
-Desde ahí se publican fotos, tallas, colores, precio y descripción.
-
-## Stack
-
-React 19, TanStack Start, Tailwind CSS v4, Postgres (Neon en producción, PGLite en local).
