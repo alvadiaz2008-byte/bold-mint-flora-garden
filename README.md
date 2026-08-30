@@ -4,7 +4,7 @@ Catálogo web de ropa y equipo táctico para personal militar. Precios en soles 
 
 La tienda pública en GitHub es el archivo [index.html](index.html). GitHub Pages la publica en:
 
-**https://alvadiaz2008-byte.github.io/frost-slate-lilac-yarrow001/**
+**https://alvadiaz2008-byte.github.io/bold-mint-flora-garden/**
 
 ## Qué incluye
 
