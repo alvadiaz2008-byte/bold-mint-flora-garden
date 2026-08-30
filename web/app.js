@@ -179,11 +179,15 @@
   }
 
   function escapeHtml(s) {
+    const amp = "&" + "amp;";
+    const lt = "&" + "lt;";
+    const gt = "&" + "gt;";
+    const quot = "&" + "quot;";
     return String(s ?? "")
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">")
-      .replace(/"/g, """);
+      .replace(/&/g, amp)
+      .replace(/</g, lt)
+      .replace(/>/g, gt)
+      .replace(/"/g, quot);
   }
 
   function home() {
@@ -633,15 +637,24 @@
   }
 
   function render() {
-    const { parts } = parseHash();
-    let inner = home();
-    if (parts[0] === "catalogo") inner = catalog();
-    else if (parts[0] === "producto") inner = productPage(parts[1]);
-    else if (parts[0] === "comprar") inner = checkoutPage(parts[1]);
-    else if (parts[0] === "admin") inner = adminPage();
-    app.innerHTML = layout(inner);
-    bind();
-    window.scrollTo(0, 0);
+    try {
+      if (!app) return;
+      const { parts } = parseHash();
+      let inner = home();
+      if (parts[0] === "catalogo") inner = catalog();
+      else if (parts[0] === "producto") inner = productPage(parts[1]);
+      else if (parts[0] === "comprar") inner = checkoutPage(parts[1]);
+      else if (parts[0] === "admin") inner = adminPage();
+      app.innerHTML = layout(inner);
+      bind();
+      window.scrollTo(0, 0);
+    } catch (err) {
+      console.error(err);
+      if (app) {
+        app.innerHTML =
+          '<div class="wrap" style="padding:3rem 1rem;color:#ecebe3"><h1>ATLAS TÁCTICO</h1><p>No se pudo cargar el catálogo. Recarga la página.</p></div>';
+      }
+    }
   }
 
   window.addEventListener("hashchange", render);

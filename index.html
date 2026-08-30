@@ -9,6 +9,7 @@
       content="Catálogo de ropa y equipo táctico para personal militar. Precios en soles."
     />
     <meta name="theme-color" content="#0b0c0a" />
+    <base href="./" />
     <link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,7 +20,14 @@
     <link rel="stylesheet" href="web/styles.css" />
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="wrap" style="padding: 3rem 1rem; color: #ecebe3">
+        <p style="letter-spacing: 0.28em; text-transform: uppercase; color: #8a9a6a">
+          ATLAS TÁCTICO
+        </p>
+        <h1>Cargando catálogo…</h1>
+      </div>
+    </div>
     <script src="web/products.js"></script>
     <script src="web/app.js"></script>
   </body>
