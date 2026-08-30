@@ -20,6 +20,7 @@ index.html       página que GitHub ejecuta
 web/styles.css   diseño
 web/app.js       catálogo, compra y administrador
 web/products.js  prendas iniciales
+imagenes/        fotos que subas a mano (luego pegas su URL en el admin)
 ```
 
 No hace falta instalar Node para verla: GitHub Pages sirve esos archivos tal cual.

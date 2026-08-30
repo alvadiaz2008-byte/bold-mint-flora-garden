@@ -1,0 +1,12 @@
+Sube aquí las fotos de los productos (JPG o PNG).
+
+Luego usa esta URL en el administrador, cambiando el nombre del archivo:
+
+https://alvadiaz2008-byte.github.io/bold-mint-flora-garden/imagenes/NOMBRE.jpg
+
+Ejemplo: si subes camiseta.jpg, la URL es:
+
+https://alvadiaz2008-byte.github.io/bold-mint-flora-garden/imagenes/camiseta.jpg
+
+Borrar un producto en el administrador lo quita del catálogo.
+La foto de esta carpeta no se borra sola: hay que eliminarla aquí si ya no la quieres.

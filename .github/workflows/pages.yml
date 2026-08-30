@@ -24,11 +24,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Prepare static site
         run: |
-          mkdir -p _site/web _site/public
+          mkdir -p _site/web _site/public _site/imagenes
           cp index.html _site/index.html
           cp .nojekyll _site/.nojekyll
           cp web/styles.css web/app.js web/products.js _site/web/
           cp public/favicon.svg public/og.jpg _site/public/
+          cp -r imagenes/. _site/imagenes/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
