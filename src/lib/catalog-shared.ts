@@ -31,7 +31,6 @@ export type ProductColor = { name: string; hex: string };
 
 export type Product = {
   id: number;
-  sku: string;
   name: string;
   description: string;
   category: string;
@@ -48,7 +47,6 @@ export type Product = {
 };
 
 export type ProductInput = {
-  sku: string;
   name: string;
   description: string;
   category: string;

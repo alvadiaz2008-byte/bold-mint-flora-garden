@@ -78,9 +78,6 @@ export function ProductDetail({
           <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight md:text-5xl">
             {product.name}
           </h1>
-          <p className="mt-2 font-mono text-sm text-muted">
-            Ref. {product.sku}
-          </p>
           <p className="mt-5 font-display text-4xl font-semibold tabular-nums">
             {formatSoles(product.priceSoles)}
           </p>

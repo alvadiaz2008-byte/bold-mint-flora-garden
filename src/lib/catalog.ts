@@ -23,7 +23,6 @@ const colorSchema = z.object({
 });
 
 const productInputSchema = z.object({
-  sku: z.string().trim().min(3).max(32),
   name: z.string().trim().min(3).max(120),
   description: z.string().trim().min(20).max(4000),
   category: z.enum(categorySlugs),
@@ -117,7 +116,6 @@ function asIso(value: string | Date): string {
 function mapProduct(row: ProductRow): Product {
   return {
     id: Number(row.id),
-    sku: row.sku,
     name: row.name,
     description: row.description,
     category: row.category,
@@ -182,7 +180,7 @@ export const listProducts = createServerFn({ method: "GET" })
       const like = `%${q}%`;
       rows = await sql.query<ProductRow>(
         `select ${SELECT_FIELDS} from products
-         where category = $1 and (name ilike $2 or sku ilike $2 or description ilike $2)
+         where category = $1 and (name ilike $2 or description ilike $2)
          order by created_at desc`,
         [category, like],
       );
@@ -195,7 +193,7 @@ export const listProducts = createServerFn({ method: "GET" })
       const like = `%${q}%`;
       rows = await sql.query<ProductRow>(
         `select ${SELECT_FIELDS} from products
-         where name ilike $1 or sku ilike $1 or description ilike $1
+         where name ilike $1 or description ilike $1
          order by created_at desc`,
         [like],
       );
@@ -269,7 +267,7 @@ export const createProduct = createServerFn({ method: "POST" })
        ) values (
          $1,$2,$3,$4,$5,$6::text[],$7::jsonb,$8::text[],$9,$10,$11::text[],$12::jsonb,$13
        ) returning id`,
-      toInsertParams(data),
+      toInsertParams(data, `ATL-${Date.now().toString(36).toUpperCase()}`),
     );
     return { id: Number(rows[0]?.id) };
   });
@@ -283,10 +281,10 @@ export const updateProduct = createServerFn({ method: "POST" })
     const params = toInsertParams(input);
     await sql.query(
       `update products set
-         sku=$1, name=$2, description=$3, category=$4, price_soles=$5,
-         sizes=$6::text[], colors=$7::jsonb, images=$8::text[], material=$9,
-         weight_g=$10, features=$11::text[], specs=$12::jsonb, featured=$13
-       where id=$14`,
+         name=$1, description=$2, category=$3, price_soles=$4,
+         sizes=$5::text[], colors=$6::jsonb, images=$7::text[], material=$8,
+         weight_g=$9, features=$10::text[], specs=$11::jsonb, featured=$12
+       where id=$13`,
       [...params, id],
     );
     return { id };
@@ -301,9 +299,8 @@ export const deleteProduct = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-function toInsertParams(data: ProductInput): unknown[] {
-  return [
-    data.sku.toUpperCase(),
+function toInsertParams(data: ProductInput, sku?: string): unknown[] {
+  const fields = [
     data.name,
     data.description,
     data.category,
@@ -317,4 +314,5 @@ function toInsertParams(data: ProductInput): unknown[] {
     JSON.stringify(data.specs),
     data.featured,
   ];
+  return sku ? [sku, ...fields] : fields;
 }

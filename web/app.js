@@ -227,7 +227,7 @@
     if (cat) list = list.filter((p) => p.category === cat);
     if (q) {
       list = list.filter((p) =>
-        (p.name + " " + p.sku + " " + p.description).toLowerCase().includes(q),
+        (p.name + " " + p.description).toLowerCase().includes(q),
       );
     }
     const title = cat ? LABEL[cat] || cat : "Catálogo";
@@ -237,7 +237,7 @@
         <h1 style="font-size:clamp(2rem,5vw,3rem);margin-top:0.3rem">${escapeHtml(title)}</h1>
         <p class="muted" style="margin-top:0.4rem">${list.length} producto${list.length === 1 ? "" : "s"}</p>
         <form class="search" data-search>
-          <input name="q" value="${escapeHtml(params.q || "")}" placeholder="Buscar prenda, SKU…" />
+          <input name="q" value="${escapeHtml(params.q || "")}" placeholder="Buscar prenda…" />
           <button class="btn" type="submit">Buscar</button>
         </form>
         <div class="filters">
@@ -282,7 +282,6 @@
           <div>
             <span class="badge">${LABEL[p.category] || p.category}</span>
             <h1 style="margin-top:0.7rem;font-size:clamp(2rem,5vw,3rem)">${escapeHtml(p.name)}</h1>
-            <p class="muted" style="margin-top:0.4rem;font-family:ui-monospace,monospace">Ref. ${escapeHtml(p.sku)}</p>
             <p class="price">${money(p.priceSoles)}</p>
             <p class="muted" style="font-size:0.9rem">Precio en soles (PEN)</p>
             <p style="margin-top:0.75rem">${stockLabel(p.stock)}</p>
@@ -428,10 +427,7 @@
         <form class="form-card" data-admin-form style="margin-bottom:2rem">
           <input type="hidden" name="id" />
           <h2 id="form-title">Nueva prenda</h2>
-          <div class="form-grid two">
-            <div class="field"><label>Nombre</label><input name="name" required /></div>
-            <div class="field"><label>SKU</label><input name="sku" required /></div>
-          </div>
+          <div class="field"><label>Nombre</label><input name="name" required /></div>
           <div class="form-grid two">
             <div class="field"><label>Categoría</label>
               <select name="category">${CATEGORIES.map((c) => `<option value="${c.slug}">${c.label}</option>`).join("")}</select>
@@ -456,7 +452,7 @@
                 <img src="${p.images[0] || ""}" alt="" />
                 <div>
                   <h3>${escapeHtml(p.name)}</h3>
-                  <p class="muted">${escapeHtml(p.sku)} · ${money(p.priceSoles)} · ${stockLabel(p.stock)}</p>
+                  <p class="muted">${money(p.priceSoles)} · ${stockLabel(p.stock)}</p>
                 </div>
                 <div class="row-actions">
                   <button class="btn outline" data-edit="${p.id}">Editar</button>
@@ -536,7 +532,6 @@
         "Pedido ATLAS TÁCTICO",
         "",
         `Producto: ${p.name}`,
-        `SKU: ${p.sku}`,
         `Talla: ${data.size}`,
         `Color: ${data.color}`,
         `Cantidad: ${qty}`,
@@ -584,7 +579,6 @@
       e.preventDefault();
       const fd = Object.fromEntries(new FormData(e.target).entries());
       const input = {
-        sku: String(fd.sku).trim(),
         name: String(fd.name).trim(),
         description: String(fd.description).trim(),
         category: fd.category,
@@ -611,7 +605,6 @@
         const form = document.querySelector("[data-admin-form]");
         if (!p || !form) return;
         form.name.value = p.name;
-        form.sku.value = p.sku;
         form.category.value = p.category;
         form.priceSoles.value = p.priceSoles;
         form.stock.value = p.stock;

@@ -24,7 +24,6 @@ import {
 import { fileToDataUrl } from "@/lib/image-file";
 
 const emptyForm = (category = "uniformes"): ProductInput => ({
-  sku: "",
   name: "",
   description: "",
   category,
@@ -41,7 +40,6 @@ const emptyForm = (category = "uniformes"): ProductInput => ({
 
 function productToInput(p: Product): ProductInput {
   return {
-    sku: p.sku,
     name: p.name,
     description: p.description,
     category: p.category,
@@ -129,7 +127,6 @@ export function AdminPanel({ products }: { products: Product[] }) {
     );
     const payload: ProductInput = {
       ...form,
-      sku: form.sku.trim(),
       name: form.name.trim(),
       description: form.description.trim(),
       features,
@@ -211,14 +208,6 @@ export function AdminPanel({ products }: { products: Product[] }) {
               value={form.name}
               onChange={(e) => patch({ name: e.target.value })}
               placeholder="Camiseta táctica Dry-Fit"
-            />
-          </Field>
-          <Field label="Referencia / SKU">
-            <Input
-              required
-              value={form.sku}
-              onChange={(e) => patch({ sku: e.target.value })}
-              placeholder="ATL-UNI-010"
             />
           </Field>
           <Field label="Categoría">
@@ -510,7 +499,7 @@ export function AdminPanel({ products }: { products: Product[] }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{p.name}</p>
                 <p className="text-xs text-muted">
-                  {p.sku} · {formatSoles(p.priceSoles)}
+                  {formatSoles(p.priceSoles)}
                 </p>
               </div>
               <div className="flex gap-1">

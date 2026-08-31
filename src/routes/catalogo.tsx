@@ -82,7 +82,7 @@ function CatalogFilters({
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por nombre o referencia"
+          placeholder="Buscar por nombre"
           aria-label="Buscar productos"
         />
         <Button type="submit" variant="secondary" size="icon" aria-label="Buscar">
