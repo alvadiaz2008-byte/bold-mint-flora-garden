@@ -14,6 +14,91 @@
   ];
   const LABEL = Object.fromEntries(CATEGORIES.map((c) => [c.slug, c.label]));
 
+  const DEPARTMENTS = [
+    "Amazonas",
+    "Áncash",
+    "Apurímac",
+    "Arequipa",
+    "Ayacucho",
+    "Cajamarca",
+    "Callao",
+    "Cusco",
+    "Huancavelica",
+    "Huánuco",
+    "Ica",
+    "Junín",
+    "La Libertad",
+    "Lambayeque",
+    "Lima",
+    "Loreto",
+    "Madre de Dios",
+    "Moquegua",
+    "Pasco",
+    "Piura",
+    "Puno",
+    "San Martín",
+    "Tacna",
+    "Tumbes",
+    "Ucayali",
+  ];
+
+  const DISTRICTS = {
+    Lima: [
+      "Ancón",
+      "Ate",
+      "Barranco",
+      "Breña",
+      "Carabayllo",
+      "Chaclacayo",
+      "Chorrillos",
+      "Cieneguilla",
+      "Comas",
+      "El Agustino",
+      "Independencia",
+      "Jesús María",
+      "La Molina",
+      "La Victoria",
+      "Lima",
+      "Lince",
+      "Los Olivos",
+      "Lurigancho",
+      "Lurín",
+      "Magdalena del Mar",
+      "Miraflores",
+      "Pachacámac",
+      "Pucusana",
+      "Pueblo Libre",
+      "Puente Piedra",
+      "Punta Hermosa",
+      "Punta Negra",
+      "Rímac",
+      "San Bartolo",
+      "San Borja",
+      "San Isidro",
+      "San Juan de Lurigancho",
+      "San Juan de Miraflores",
+      "San Luis",
+      "San Martín de Porres",
+      "San Miguel",
+      "Santa Anita",
+      "Santa María del Mar",
+      "Santa Rosa",
+      "Santiago de Surco",
+      "Surquillo",
+      "Villa El Salvador",
+      "Villa María del Triunfo",
+    ],
+    Callao: [
+      "Bellavista",
+      "Callao",
+      "Carmen de la Legua Reynoso",
+      "La Perla",
+      "La Punta",
+      "Mi Perú",
+      "Ventanilla",
+    ],
+  };
+
   const $ = (sel) => document.querySelector(sel);
   const app = $("#app");
 
@@ -23,6 +108,97 @@
       currency: "PEN",
       minimumFractionDigits: 2,
     }).format(Number(n) || 0);
+  }
+
+  function onlyDigits(s) {
+    return String(s || "").replace(/\D/g, "");
+  }
+
+  function normalizePhone(s) {
+    let d = onlyDigits(s);
+    if (d.startsWith("51") && d.length >= 11) d = d.slice(2);
+    return d;
+  }
+
+  function fold(s) {
+    return String(s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  function isFakeWord(w) {
+    return /^(test|prueba|asdf|qwerty|ficticia|inventada|xxx+|n\/?a|ninguna|ningun|abc+|lorem|foo|bar|hola|aaaa+|zzzz+|qwe|asd)$/.test(
+      w,
+    );
+  }
+
+  function validateOrder(data) {
+    const name = String(data.name || "").trim().replace(/\s+/g, " ");
+    if (name.length < 5 || !/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' ]+$/.test(name)) {
+      return "Escribe tu nombre y apellido, solo letras.";
+    }
+    if (name.split(" ").filter((w) => w.length > 1).length < 2) {
+      return "Incluye nombre y apellido.";
+    }
+
+    const phone = normalizePhone(data.phone);
+    if (!/^9\d{8}$/.test(phone)) {
+      return "El celular debe tener 9 dígitos y empezar con 9. Ejemplo: 955802712";
+    }
+
+    const dni = onlyDigits(data.dni);
+    if (String(data.dni || "").trim() && !/^\d{8}$/.test(dni)) {
+      return "El DNI debe tener 8 dígitos, o déjalo vacío.";
+    }
+
+    if (!DEPARTMENTS.includes(String(data.department || ""))) {
+      return "Elige un departamento de la lista.";
+    }
+
+    const city = String(data.city || "").trim();
+    if (city.length < 3 || !/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' .\-]+$/.test(city)) {
+      return "Escribe una ciudad o provincia real.";
+    }
+    if (isFakeWord(fold(city))) return "Esa ciudad no parece real.";
+
+    const district = String(data.district || "").trim();
+    if (district.length < 3 || !/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' .\-]+$/.test(district)) {
+      return "Escribe un distrito real.";
+    }
+    if (isFakeWord(fold(district))) return "Ese distrito no parece real.";
+    const known = DISTRICTS[data.department];
+    if (known) {
+      const ok = known.some((d) => fold(d) === fold(district));
+      if (!ok) {
+        return `Elige un distrito válido de ${data.department}.`;
+      }
+    }
+
+    const address = String(data.address || "").trim().replace(/\s+/g, " ");
+    if (address.length < 10) {
+      return "La dirección es muy corta. Incluye calle y número.";
+    }
+    if (!/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(address)) {
+      return "La dirección debe incluir el nombre de la calle.";
+    }
+    if (!/\d/.test(address)) {
+      return "Incluye el número de la vivienda, manzana o lote.";
+    }
+    const compact = fold(address).replace(/\s/g, "");
+    if (/(.)\1{4,}/.test(compact)) return "Esa dirección no parece real.";
+    const words = fold(address).split(/[\s,.#/-]+/).filter(Boolean);
+    if (words.filter(isFakeWord).length) {
+      return "Ingresa una dirección real: calle, número y urbanización.";
+    }
+    if (/^(calle|av|avenida|jr|jiron|mz|lote|urb|urbanizacion)(\s+\d+)?$/.test(fold(address))) {
+      return "Completa la dirección (calle, número y urbanización o zona).";
+    }
+    const uniqueLetters = new Set(compact.replace(/[^a-z]/g, "")).size;
+    if (uniqueLetters < 5) return "Esa dirección no parece real.";
+
+    return "";
   }
 
   function loadProducts() {
@@ -368,29 +544,60 @@
           <h2 style="margin-top:0.3rem">${escapeHtml(p.name)}</h2>
           <p style="margin-top:0.4rem">${money(p.priceSoles)} · ${stockLabel(p.stock)}</p>
         </div>
-        <form class="form-card" data-checkout="${p.id}">
-          <div class="form-grid two">
-            <div class="field"><label>Talla</label>
-              <select name="size">${p.sizes.map((s) => `<option>${escapeHtml(s)}</option>`).join("")}</select>
-            </div>
-            <div class="field"><label>Color</label>
-              <select name="color">${p.colors.map((c) => `<option>${escapeHtml(c.name)}</option>`).join("")}</select>
-            </div>
+        <form class="form-card" data-checkout="${p.id}" novalidate>
+          <div class="field">
+            <label>Talla</label>
+            <select name="size">${p.sizes.map((s) => `<option>${escapeHtml(s)}</option>`).join("")}</select>
           </div>
+          <fieldset class="field" style="border:0;padding:0">
+            <legend class="subtle">Color</legend>
+            <input type="hidden" name="color" value="${escapeHtml(p.colors[0]?.name || "")}" />
+            <div class="choices">
+              ${(p.colors || [])
+                .map(
+                  (c, i) =>
+                    `<button type="button" class="choice ${i === 0 ? "on" : ""}" data-color="${escapeHtml(c.name)}"><span class="swatch swatch-lg" style="background:${c.hex}"></span>${escapeHtml(c.name)}</button>`,
+                )
+                .join("")}
+            </div>
+          </fieldset>
           <div class="field"><label>Cantidad</label>
             <input name="qty" type="number" min="1" max="${p.stock}" value="1" required />
           </div>
-          <div class="field"><label>Nombre completo</label><input name="name" required maxlength="80" /></div>
-          <div class="form-grid two">
-            <div class="field"><label>Teléfono</label><input name="phone" required maxlength="20" placeholder="9xxxxxxxx" /></div>
-            <div class="field"><label>DNI (opcional)</label><input name="dni" maxlength="12" /></div>
+          <div class="field"><label>Nombre completo</label>
+            <input name="name" required maxlength="80" autocomplete="name" placeholder="Nombre y apellido" />
           </div>
-          <div class="field"><label>Dirección</label><input name="address" required maxlength="160" placeholder="Calle, número, urbanización" /></div>
           <div class="form-grid two">
-            <div class="field"><label>Distrito</label><input name="district" required maxlength="60" /></div>
-            <div class="field"><label>Ciudad / provincia</label><input name="city" required maxlength="60" /></div>
+            <div class="field"><label>Celular (9 dígitos)</label>
+              <input name="phone" required inputmode="numeric" maxlength="15" placeholder="9xxxxxxxx" autocomplete="tel" />
+              <span class="hint">Debe empezar con 9. Ejemplo: 955802712</span>
+            </div>
+            <div class="field"><label>DNI (opcional)</label>
+              <input name="dni" inputmode="numeric" maxlength="8" placeholder="8 dígitos" />
+            </div>
           </div>
-          <div class="field"><label>Referencia</label><input name="ref" maxlength="120" placeholder="Casa color, piso, etc." /></div>
+          <div class="field"><label>Departamento</label>
+            <select name="department" required data-department>
+              <option value="">Elige departamento</option>
+              ${DEPARTMENTS.map((d) => `<option>${d}</option>`).join("")}
+            </select>
+          </div>
+          <div class="form-grid two">
+            <div class="field"><label>Ciudad / provincia</label>
+              <input name="city" required maxlength="60" placeholder="Ej. Lima" />
+            </div>
+            <div class="field"><label>Distrito</label>
+              <input name="district" required maxlength="60" list="district-list" placeholder="Ej. San Juan de Lurigancho" />
+              <datalist id="district-list"></datalist>
+            </div>
+          </div>
+          <div class="field"><label>Dirección</label>
+            <input name="address" required maxlength="160" autocomplete="street-address" placeholder="Jr. Los Pinos 245, Urb. Santa Rosa" />
+            <span class="hint">Calle, número y urbanización o zona. No se aceptan direcciones inventadas.</span>
+          </div>
+          <div class="field"><label>Referencia</label>
+            <input name="ref" maxlength="120" placeholder="Casa color, piso, costado de…" />
+          </div>
           <p class="error" data-err hidden></p>
           <button class="btn lg" type="submit">Confirmar y abrir WhatsApp</button>
         </form>
@@ -504,6 +711,8 @@
       btn.addEventListener("click", () => {
         document.querySelectorAll("[data-color]").forEach((b) => b.classList.remove("on"));
         btn.classList.add("on");
+        const hidden = document.querySelector('form[data-checkout] [name="color"]');
+        if (hidden) hidden.value = btn.getAttribute("data-color") || "";
       });
     });
     document.querySelectorAll("[data-size]").forEach((btn) => {
@@ -521,11 +730,25 @@
       if (!p) return;
       const data = Object.fromEntries(new FormData(e.target).entries());
       const qty = Math.max(1, Number(data.qty) || 1);
-      if (qty > p.stock) {
+      const showError = (msg) => {
         err.hidden = false;
-        err.textContent = "No hay tantas unidades.";
+        err.textContent = msg;
+        err.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
+      if (qty > p.stock) {
+        showError("No hay tantas unidades.");
         return;
       }
+      if (!data.color) {
+        showError("Elige un color.");
+        return;
+      }
+      const invalid = validateOrder(data);
+      if (invalid) {
+        showError(invalid);
+        return;
+      }
+      const phone = normalizePhone(data.phone);
       const next = p.stock - qty;
       setStock(p.id, next);
       const msg = [
@@ -539,18 +762,29 @@
         `Total: ${money(p.priceSoles * qty)}`,
         "",
         "Comprador",
-        `Nombre: ${data.name}`,
-        `Teléfono: ${data.phone}`,
-        data.dni ? `DNI: ${data.dni}` : null,
-        `Dirección: ${data.address}`,
-        `Distrito: ${data.district}`,
+        `Nombre: ${String(data.name).trim()}`,
+        `Teléfono: ${phone}`,
+        data.dni ? `DNI: ${onlyDigits(data.dni)}` : null,
+        `Departamento: ${data.department}`,
         `Ciudad: ${data.city}`,
+        `Distrito: ${data.district}`,
+        `Dirección: ${String(data.address).trim()}`,
         data.ref ? `Referencia: ${data.ref}` : null,
       ]
         .filter(Boolean)
         .join("\n");
       window.location.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
     });
+
+    const dept = document.querySelector("[data-department]");
+    const fillDistricts = () => {
+      const list = document.querySelector("#district-list");
+      if (!dept || !list) return;
+      const options = DISTRICTS[dept.value] || [];
+      list.innerHTML = options.map((d) => `<option value="${d}"></option>`).join("");
+    };
+    dept?.addEventListener("change", fillDistricts);
+    fillDistricts();
 
     document.querySelector("[data-login]")?.addEventListener("submit", (e) => {
       e.preventDefault();

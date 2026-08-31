@@ -177,6 +177,8 @@ header.nav {
 .card-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; padding-top: 0.5rem; }
 .swatches { display: flex; gap: 0.25rem; }
 .swatch { width: 0.75rem; height: 0.75rem; border-radius: 999px; box-shadow: var(--shadow); }
+.swatch-lg { width: 1.15rem; height: 1.15rem; }
+.hint { font-size: 0.8rem; color: var(--muted); }
 .badge {
   display: inline-flex; align-items: center; min-height: 1.5rem; padding: 0 0.5rem;
   border-radius: 999px; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
