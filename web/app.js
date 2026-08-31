@@ -13,91 +13,8 @@
     { slug: "accesorios", label: "Accesorios" },
   ];
   const LABEL = Object.fromEntries(CATEGORIES.map((c) => [c.slug, c.label]));
-
-  const DEPARTMENTS = [
-    "Amazonas",
-    "Áncash",
-    "Apurímac",
-    "Arequipa",
-    "Ayacucho",
-    "Cajamarca",
-    "Callao",
-    "Cusco",
-    "Huancavelica",
-    "Huánuco",
-    "Ica",
-    "Junín",
-    "La Libertad",
-    "Lambayeque",
-    "Lima",
-    "Loreto",
-    "Madre de Dios",
-    "Moquegua",
-    "Pasco",
-    "Piura",
-    "Puno",
-    "San Martín",
-    "Tacna",
-    "Tumbes",
-    "Ucayali",
-  ];
-
-  const DISTRICTS = {
-    Lima: [
-      "Ancón",
-      "Ate",
-      "Barranco",
-      "Breña",
-      "Carabayllo",
-      "Chaclacayo",
-      "Chorrillos",
-      "Cieneguilla",
-      "Comas",
-      "El Agustino",
-      "Independencia",
-      "Jesús María",
-      "La Molina",
-      "La Victoria",
-      "Lima",
-      "Lince",
-      "Los Olivos",
-      "Lurigancho",
-      "Lurín",
-      "Magdalena del Mar",
-      "Miraflores",
-      "Pachacámac",
-      "Pucusana",
-      "Pueblo Libre",
-      "Puente Piedra",
-      "Punta Hermosa",
-      "Punta Negra",
-      "Rímac",
-      "San Bartolo",
-      "San Borja",
-      "San Isidro",
-      "San Juan de Lurigancho",
-      "San Juan de Miraflores",
-      "San Luis",
-      "San Martín de Porres",
-      "San Miguel",
-      "Santa Anita",
-      "Santa María del Mar",
-      "Santa Rosa",
-      "Santiago de Surco",
-      "Surquillo",
-      "Villa El Salvador",
-      "Villa María del Triunfo",
-    ],
-    Callao: [
-      "Bellavista",
-      "Callao",
-      "Carmen de la Legua Reynoso",
-      "La Perla",
-      "La Punta",
-      "Mi Perú",
-      "Ventanilla",
-    ],
-  };
+  const SHIP_CITY = "Iquitos";
+  const SHIP_REGION = "Loreto, Perú";
 
   const $ = (sel) => document.querySelector(sel);
   const app = $("#app");
@@ -120,84 +37,17 @@
     return d;
   }
 
-  function fold(s) {
-    return String(s || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
-  }
-
-  function isFakeWord(w) {
-    return /^(test|prueba|asdf|qwerty|ficticia|inventada|xxx+|n\/?a|ninguna|ningun|abc+|lorem|foo|bar|hola|aaaa+|zzzz+|qwe|asd)$/.test(
-      w,
-    );
-  }
-
   function validateOrder(data) {
-    const name = String(data.name || "").trim().replace(/\s+/g, " ");
-    if (name.length < 5 || !/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' ]+$/.test(name)) {
-      return "Escribe tu nombre y apellido, solo letras.";
-    }
-    if (name.split(" ").filter((w) => w.length > 1).length < 2) {
-      return "Incluye nombre y apellido.";
-    }
-
+    if (!String(data.name || "").trim()) return "Escribe tu nombre.";
     const phone = normalizePhone(data.phone);
     if (!/^9\d{8}$/.test(phone)) {
       return "El celular debe tener 9 dígitos y empezar con 9. Ejemplo: 955802712";
     }
-
     const dni = onlyDigits(data.dni);
     if (String(data.dni || "").trim() && !/^\d{8}$/.test(dni)) {
       return "El DNI debe tener 8 dígitos, o déjalo vacío.";
     }
-
-    if (!DEPARTMENTS.includes(String(data.department || ""))) {
-      return "Elige un departamento de la lista.";
-    }
-
-    const city = String(data.city || "").trim();
-    if (city.length < 3 || !/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' .\-]+$/.test(city)) {
-      return "Escribe una ciudad o provincia real.";
-    }
-    if (isFakeWord(fold(city))) return "Esa ciudad no parece real.";
-
-    const district = String(data.district || "").trim();
-    if (district.length < 3 || !/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' .\-]+$/.test(district)) {
-      return "Escribe un distrito real.";
-    }
-    if (isFakeWord(fold(district))) return "Ese distrito no parece real.";
-    const known = DISTRICTS[data.department];
-    if (known) {
-      const ok = known.some((d) => fold(d) === fold(district));
-      if (!ok) {
-        return `Elige un distrito válido de ${data.department}.`;
-      }
-    }
-
-    const address = String(data.address || "").trim().replace(/\s+/g, " ");
-    if (address.length < 10) {
-      return "La dirección es muy corta. Incluye calle y número.";
-    }
-    if (!/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(address)) {
-      return "La dirección debe incluir el nombre de la calle.";
-    }
-    if (!/\d/.test(address)) {
-      return "Incluye el número de la vivienda, manzana o lote.";
-    }
-    const compact = fold(address).replace(/\s/g, "");
-    if (/(.)\1{4,}/.test(compact)) return "Esa dirección no parece real.";
-    const words = fold(address).split(/[\s,.#/-]+/).filter(Boolean);
-    if (words.filter(isFakeWord).length) {
-      return "Ingresa una dirección real: calle, número y urbanización.";
-    }
-    if (/^(calle|av|avenida|jr|jiron|mz|lote|urb|urbanizacion)(\s+\d+)?$/.test(fold(address))) {
-      return "Completa la dirección (calle, número y urbanización o zona).";
-    }
-    const uniqueLetters = new Set(compact.replace(/[^a-z]/g, "")).size;
-    if (uniqueLetters < 5) return "Esa dirección no parece real.";
-
+    if (!String(data.address || "").trim()) return "Escribe la dirección en Iquitos.";
     return "";
   }
 
@@ -314,7 +164,7 @@
           <div class="wrap foot-grid">
             <div>
               ${logo()}
-              <p class="muted" style="margin-top:0.75rem;max-width:18rem;font-size:0.9rem">Catálogo de ropa y equipo para personal militar. Precios en soles.</p>
+              <p class="muted" style="margin-top:0.75rem;max-width:18rem;font-size:0.9rem">Catálogo de ropa y equipo para personal militar. Precios en soles. Envíos solo en Iquitos.</p>
             </div>
             <div>
               <p class="subtle">Categorías</p>
@@ -538,7 +388,7 @@
       <div class="wrap" style="padding:2rem 0 3rem;max-width:44rem">
         <p class="kicker">Pedido</p>
         <h1 style="margin-top:0.4rem;font-size:2.4rem">Datos de envío</h1>
-        <p class="muted" style="margin-top:0.5rem">Al confirmar se descuenta 1 unidad del stock y se abre WhatsApp con tu pedido al +51 955 802 712.</p>
+        <p class="muted" style="margin-top:0.5rem">Envíos solo en Iquitos. Al confirmar se descuenta el stock y se abre WhatsApp al +51 955 802 712.</p>
         <div class="panel" style="margin:1.25rem 0">
           <p class="subtle">${LABEL[p.category] || ""}</p>
           <h2 style="margin-top:0.3rem">${escapeHtml(p.name)}</h2>
@@ -576,31 +426,30 @@
               <input name="dni" inputmode="numeric" maxlength="8" placeholder="8 dígitos" />
             </div>
           </div>
-          <div class="field"><label>Departamento</label>
-            <select name="department" required data-department>
-              <option value="">Elige departamento</option>
-              ${DEPARTMENTS.map((d) => `<option>${d}</option>`).join("")}
-            </select>
+          <div class="field">
+            <label>Ciudad de envío</label>
+            <input value="Iquitos, Loreto, Perú" readonly class="readonly" />
           </div>
-          <div class="form-grid two">
-            <div class="field"><label>Ciudad / provincia</label>
-              <input name="city" required maxlength="60" placeholder="Ej. Lima" />
-            </div>
-            <div class="field"><label>Distrito</label>
-              <input name="district" required maxlength="60" list="district-list" placeholder="Ej. San Juan de Lurigancho" />
-              <datalist id="district-list"></datalist>
-            </div>
-          </div>
-          <div class="field"><label>Dirección</label>
-            <input name="address" required maxlength="160" autocomplete="street-address" placeholder="Jr. Los Pinos 245, Urb. Santa Rosa" />
-            <span class="hint">Calle, número y urbanización o zona. No se aceptan direcciones inventadas.</span>
+          <div class="field"><label>Dirección en Iquitos</label>
+            <input name="address" required maxlength="160" autocomplete="street-address" placeholder="Calle, número, urbanización o zona" />
           </div>
           <div class="field"><label>Referencia</label>
             <input name="ref" maxlength="120" placeholder="Casa color, piso, costado de…" />
           </div>
           <p class="error" data-err hidden></p>
-          <button class="btn lg" type="submit">Confirmar y abrir WhatsApp</button>
+          <button class="btn lg" type="submit">Revisar pedido</button>
         </form>
+        <div class="modal" data-preview hidden>
+          <div class="modal-card">
+            <p class="kicker">Vista previa</p>
+            <h2 style="margin-top:0.35rem">Confirma tus datos</h2>
+            <dl class="preview-list" data-preview-body></dl>
+            <div class="preview-actions">
+              <button class="btn outline" type="button" data-preview-edit>Editar</button>
+              <button class="btn" type="button" data-preview-send>Confirmar y abrir WhatsApp</button>
+            </div>
+          </div>
+        </div>
       </div>`;
   }
 
@@ -724,17 +573,20 @@
 
     document.querySelector("[data-checkout]")?.addEventListener("submit", (e) => {
       e.preventDefault();
-      const id = e.target.getAttribute("data-checkout");
+      const form = e.target;
+      const id = form.getAttribute("data-checkout");
       const p = byId(id);
-      const err = e.target.querySelector("[data-err]");
-      if (!p) return;
-      const data = Object.fromEntries(new FormData(e.target).entries());
+      const err = form.querySelector("[data-err]");
+      const modal = document.querySelector("[data-preview]");
+      if (!p || !modal) return;
+      const data = Object.fromEntries(new FormData(form).entries());
       const qty = Math.max(1, Number(data.qty) || 1);
       const showError = (msg) => {
         err.hidden = false;
         err.textContent = msg;
         err.scrollIntoView({ behavior: "smooth", block: "center" });
       };
+      err.hidden = true;
       if (qty > p.stock) {
         showError("No hay tantas unidades.");
         return;
@@ -749,42 +601,68 @@
         return;
       }
       const phone = normalizePhone(data.phone);
-      const next = p.stock - qty;
-      setStock(p.id, next);
-      const msg = [
-        "Pedido ATLAS TÁCTICO",
-        "",
-        `Producto: ${p.name}`,
-        `Talla: ${data.size}`,
-        `Color: ${data.color}`,
-        `Cantidad: ${qty}`,
-        `Precio unitario: ${money(p.priceSoles)}`,
-        `Total: ${money(p.priceSoles * qty)}`,
-        "",
-        "Comprador",
-        `Nombre: ${String(data.name).trim()}`,
-        `Teléfono: ${phone}`,
-        data.dni ? `DNI: ${onlyDigits(data.dni)}` : null,
-        `Departamento: ${data.department}`,
-        `Ciudad: ${data.city}`,
-        `Distrito: ${data.district}`,
-        `Dirección: ${String(data.address).trim()}`,
-        data.ref ? `Referencia: ${data.ref}` : null,
-      ]
-        .filter(Boolean)
-        .join("\n");
-      window.location.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
-    });
+      const name = String(data.name).trim();
+      const address = String(data.address).trim();
+      const ref = String(data.ref || "").trim();
+      const dni = onlyDigits(data.dni);
+      const total = money(p.priceSoles * qty);
+      const rows = [
+        ["Producto", p.name],
+        ["Talla", data.size],
+        ["Color", data.color],
+        ["Cantidad", String(qty)],
+        ["Total", total],
+        ["Nombre", name],
+        ["Celular", phone],
+        dni ? ["DNI", dni] : null,
+        ["Ciudad", `${SHIP_CITY}, ${SHIP_REGION}`],
+        ["Dirección", address],
+        ref ? ["Referencia", ref] : null,
+      ].filter(Boolean);
+      modal.querySelector("[data-preview-body]").innerHTML = rows
+        .map(
+          ([k, v]) =>
+            `<div class="row"><dt class="muted">${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd></div>`,
+        )
+        .join("");
+      modal.hidden = false;
+      document.body.style.overflow = "hidden";
 
-    const dept = document.querySelector("[data-department]");
-    const fillDistricts = () => {
-      const list = document.querySelector("#district-list");
-      if (!dept || !list) return;
-      const options = DISTRICTS[dept.value] || [];
-      list.innerHTML = options.map((d) => `<option value="${d}"></option>`).join("");
-    };
-    dept?.addEventListener("change", fillDistricts);
-    fillDistricts();
+      const closePreview = () => {
+        modal.hidden = true;
+        document.body.style.overflow = "";
+      };
+      modal.querySelector("[data-preview-edit]").onclick = closePreview;
+      modal.onclick = (ev) => {
+        if (ev.target === modal) closePreview();
+      };
+      modal.querySelector("[data-preview-send]").onclick = () => {
+        const sendBtn = modal.querySelector("[data-preview-send]");
+        sendBtn.disabled = true;
+        setStock(p.id, p.stock - qty);
+        const msg = [
+          "Pedido ATLAS TÁCTICO",
+          "",
+          `Producto: ${p.name}`,
+          `Talla: ${data.size}`,
+          `Color: ${data.color}`,
+          `Cantidad: ${qty}`,
+          `Precio unitario: ${money(p.priceSoles)}`,
+          `Total: ${total}`,
+          "",
+          "Comprador",
+          `Nombre: ${name}`,
+          `Teléfono: ${phone}`,
+          dni ? `DNI: ${dni}` : null,
+          `Ciudad: ${SHIP_CITY}, ${SHIP_REGION}`,
+          `Dirección: ${address}`,
+          ref ? `Referencia: ${ref}` : null,
+        ]
+          .filter(Boolean)
+          .join("\n");
+        window.location.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
+      };
+    });
 
     document.querySelector("[data-login]")?.addEventListener("submit", (e) => {
       e.preventDefault();

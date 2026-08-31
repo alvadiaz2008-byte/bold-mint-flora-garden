@@ -179,6 +179,39 @@ header.nav {
 .swatch { width: 0.75rem; height: 0.75rem; border-radius: 999px; box-shadow: var(--shadow); }
 .swatch-lg { width: 1.15rem; height: 1.15rem; }
 .hint { font-size: 0.8rem; color: var(--muted); }
+.field input.readonly {
+  opacity: 0.85;
+  cursor: default;
+  color: var(--fg);
+}
+.modal {
+  position: fixed; inset: 0; z-index: 80;
+  display: grid; place-items: center;
+  padding: 1rem;
+  background: color-mix(in oklab, var(--bg) 72%, transparent);
+  backdrop-filter: blur(6px);
+}
+.modal[hidden] { display: none; }
+.modal-card {
+  width: min(32rem, 100%);
+  max-height: min(90svh, 40rem);
+  overflow: auto;
+  background: var(--surface);
+  border-radius: 1rem;
+  padding: 1.35rem 1.25rem 1.2rem;
+  box-shadow: var(--shadow-hover);
+}
+.preview-list { margin: 1.1rem 0 0; }
+.preview-list .row {
+  display: flex; justify-content: space-between; gap: 1rem;
+  padding: 0.55rem 0; border-top: 1px solid var(--border); font-size: 0.92rem;
+}
+.preview-list .row:first-child { border-top: 0; }
+.preview-list dd { text-align: right; font-weight: 600; }
+.preview-actions {
+  display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end;
+  margin-top: 1.15rem;
+}
 .badge {
   display: inline-flex; align-items: center; min-height: 1.5rem; padding: 0 0.5rem;
   border-radius: 999px; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
