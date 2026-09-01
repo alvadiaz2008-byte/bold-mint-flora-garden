@@ -365,3 +365,48 @@ footer.site-foot { border-top: 1px solid var(--border); background: var(--surfac
   gap: 1rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);
 }
 .cart-total p { font-size: 1.25rem; }
+
+.color-list { display: grid; gap: 0.55rem; margin-bottom: 0.6rem; }
+.color-row {
+  display: grid; grid-template-columns: 2.75rem 1fr auto;
+  gap: 0.5rem; align-items: center;
+}
+.color-chip {
+  width: 2.75rem; height: 2.75rem; border-radius: 0.5rem; border: 0;
+  box-shadow: var(--shadow); cursor: pointer;
+}
+.picker {
+  margin-top: 0.85rem; padding: 0.9rem;
+  background: var(--elevated); border-radius: 0.75rem; box-shadow: var(--shadow);
+  display: grid; gap: 0.45rem;
+}
+.picker[hidden] { display: none; }
+.picker-sv {
+  position: relative; height: 9rem; border-radius: 0.55rem; overflow: hidden;
+  cursor: crosshair; touch-action: none;
+  background:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, var(--picker-hue, #4B5320));
+}
+.picker-knob, .picker-hue-knob {
+  position: absolute; width: 0.9rem; height: 0.9rem;
+  border: 2px solid #fff; border-radius: 999px;
+  box-shadow: 0 0 0 1px #0006; transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.picker-hue {
+  position: relative; height: 0.9rem; border-radius: 999px;
+  cursor: pointer; touch-action: none;
+  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+}
+.picker-hue-knob { top: 50%; }
+.picker-exp { width: 100%; accent-color: var(--primary); }
+.picker-tools {
+  display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin-top: 0.35rem;
+}
+.picker-hex {
+  flex: 1; min-width: 6.5rem;
+  min-height: 2.5rem; padding: 0.35rem 0.6rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem;
+  font-family: ui-monospace, monospace;
+}

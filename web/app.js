@@ -722,7 +722,30 @@
             <div class="field"><label>Stock (unidades)</label><input name="stock" type="number" min="0" step="1" required value="10" /></div>
             <div class="field"><label>Tallas (separadas por coma)</label><input name="sizes" value="S, M, L, XL" /></div>
           </div>
-          <div class="field"><label>Colores (Nombre:#hex, separados por coma)</label><input name="colors" value="Olivo:#4B5320, Negro:#1A1A1A" /></div>
+          <div class="field">
+            <label>Colores</label>
+            <div class="color-list" data-color-list>
+              ${colorRowHtml("Olivo", "#4B5320")}${colorRowHtml("Negro", "#1A1A1A")}
+            </div>
+            <button class="btn outline" type="button" data-add-color>Añadir color</button>
+            <div class="picker" data-picker hidden>
+              <p class="subtle">Elige el color</p>
+              <div class="picker-sv" data-sv>
+                <span class="picker-knob" data-sv-knob></span>
+              </div>
+              <span class="hint">Tono</span>
+              <div class="picker-hue" data-hue>
+                <span class="picker-hue-knob" data-hue-knob></span>
+              </div>
+              <span class="hint">Exposición</span>
+              <input class="picker-exp" type="range" min="0" max="100" data-value />
+              <div class="picker-tools">
+                <button class="btn outline" type="button" data-eyedrop hidden>Cuentagotas</button>
+                <input class="picker-hex" data-hex maxlength="7" spellcheck="false" />
+                <button class="btn" type="button" data-picker-ok>Listo</button>
+              </div>
+            </div>
+          </div>
           <div class="field"><label>URL de imagen</label><input name="image" placeholder="https://…" /></div>
           <div class="field"><label>Descripción</label><textarea name="description" required minlength="20"></textarea></div>
           <div class="field"><label>Material</label><input name="material" /></div>
@@ -756,8 +779,205 @@
       .filter(Boolean)
       .map((part) => {
         const [name, hex] = part.split(":").map((s) => s.trim());
-        return { name: name || "Color", hex: hex || "#4B5320" };
+        return { name: name || "Color", hex: normalizeHex(hex) };
       });
+  }
+
+  function normalizeHex(hex) {
+    let h = String(hex || "").trim();
+    if (!h.startsWith("#")) h = "#" + h;
+    if (/^#[0-9a-fA-F]{3}$/.test(h)) {
+      h = "#" + [...h.slice(1)].map((c) => c + c).join("");
+    }
+    return /^#[0-9a-fA-F]{6}$/.test(h) ? h.toUpperCase() : "#4B5320";
+  }
+
+  function hexToHsv(hex) {
+    const h = normalizeHex(hex).slice(1);
+    const r = parseInt(h.slice(0, 2), 16) / 255;
+    const g = parseInt(h.slice(2, 4), 16) / 255;
+    const b = parseInt(h.slice(4, 6), 16) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const d = max - min;
+    let hue = 0;
+    if (d) {
+      if (max === r) hue = ((g - b) / d) % 6;
+      else if (max === g) hue = (b - r) / d + 2;
+      else hue = (r - g) / d + 4;
+      hue *= 60;
+      if (hue < 0) hue += 360;
+    }
+    return { h: hue, s: max === 0 ? 0 : d / max, v: max };
+  }
+
+  function hsvToHex(h, s, v) {
+    const f = (n) => {
+      const k = (n + h / 60) % 6;
+      return v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+    };
+    const to = (x) =>
+      Math.round(x * 255)
+        .toString(16)
+        .padStart(2, "0");
+    return ("#" + to(f(5)) + to(f(3)) + to(f(1))).toUpperCase();
+  }
+
+  function colorRowHtml(name, hex) {
+    const safe = normalizeHex(hex);
+    return `<div class="color-row">
+      <button type="button" class="color-chip" data-open-picker style="background:${safe}" aria-label="Elegir color"></button>
+      <input type="text" data-color-name value="${escapeHtml(name)}" placeholder="Nombre del color" maxlength="40" />
+      <input type="hidden" data-color-hex value="${safe}" />
+      <button type="button" class="btn outline" data-remove-color>Quitar</button>
+    </div>`;
+  }
+
+  function readAdminColors() {
+    return [...document.querySelectorAll(".color-row")]
+      .map((row) => ({
+        name: row.querySelector("[data-color-name]")?.value.trim() || "Color",
+        hex: normalizeHex(row.querySelector("[data-color-hex]")?.value),
+      }))
+      .filter((c) => c.name);
+  }
+
+  function setColorList(colors) {
+    const list = document.querySelector("[data-color-list]");
+    if (!list) return;
+    const rows = colors.length
+      ? colors
+      : [
+          { name: "Olivo", hex: "#4B5320" },
+          { name: "Negro", hex: "#1A1A1A" },
+        ];
+    list.innerHTML = rows.map((c) => colorRowHtml(c.name, c.hex)).join("");
+  }
+
+  function bindColorPicker() {
+    const picker = document.querySelector("[data-picker]");
+    const sv = document.querySelector("[data-sv]");
+    const svKnob = document.querySelector("[data-sv-knob]");
+    const hueEl = document.querySelector("[data-hue]");
+    const hueKnob = document.querySelector("[data-hue-knob]");
+    const valueEl = document.querySelector("[data-value]");
+    const hexEl = document.querySelector("[data-hex]");
+    const eyedrop = document.querySelector("[data-eyedrop]");
+    if (!picker || !sv) return;
+
+    let hsv = { h: 80, s: 0.55, v: 0.32 };
+    let activeRow = null;
+
+    if (window.EyeDropper && eyedrop) eyedrop.hidden = false;
+
+    function applyToRow() {
+      if (!activeRow) return;
+      const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
+      const chip = activeRow.querySelector("[data-open-picker]");
+      const hidden = activeRow.querySelector("[data-color-hex]");
+      if (chip) chip.style.background = hex;
+      if (hidden) hidden.value = hex;
+      if (hexEl) hexEl.value = hex;
+    }
+
+    function paint() {
+      const hueColor = hsvToHex(hsv.h, 1, 1);
+      sv.style.setProperty("--picker-hue", hueColor);
+      if (svKnob) {
+        svKnob.style.left = hsv.s * 100 + "%";
+        svKnob.style.top = 100 - hsv.v * 100 + "%";
+      }
+      if (hueKnob) hueKnob.style.left = (hsv.h / 360) * 100 + "%";
+      if (valueEl) valueEl.value = String(Math.round(hsv.v * 100));
+      applyToRow();
+    }
+
+    function openFor(row) {
+      activeRow = row;
+      const hex = row.querySelector("[data-color-hex]")?.value || "#4B5320";
+      hsv = hexToHsv(hex);
+      picker.hidden = false;
+      paint();
+      picker.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function fromPoint(el, ev, horizontal, vertical) {
+      const r = el.getBoundingClientRect();
+      const x = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width));
+      const y = Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height));
+      if (horizontal) hsv.h = x * 360;
+      if (vertical) {
+        hsv.s = x;
+        hsv.v = 1 - y;
+      }
+      paint();
+    }
+
+    function drag(el, onMove) {
+      const move = (ev) => onMove(ev.touches ? ev.touches[0] : ev);
+      const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        window.removeEventListener("touchmove", move);
+        window.removeEventListener("touchend", up);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+      window.addEventListener("touchmove", move, { passive: false });
+      window.addEventListener("touchend", up);
+    }
+
+    document.querySelector("[data-color-list]")?.addEventListener("click", (e) => {
+      const row = e.target.closest(".color-row");
+      if (!row) return;
+      if (e.target.closest("[data-open-picker]")) openFor(row);
+      if (e.target.closest("[data-remove-color]")) {
+        const list = document.querySelector("[data-color-list]");
+        if (list && list.querySelectorAll(".color-row").length > 1) row.remove();
+        if (activeRow === row) {
+          picker.hidden = true;
+          activeRow = null;
+        }
+      }
+    });
+
+    document.querySelector("[data-add-color]")?.addEventListener("click", () => {
+      const list = document.querySelector("[data-color-list]");
+      if (!list) return;
+      list.insertAdjacentHTML("beforeend", colorRowHtml("Color", "#8A9A6A"));
+      openFor(list.querySelector(".color-row:last-child"));
+    });
+
+    sv.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      fromPoint(sv, ev, false, true);
+      drag(sv, (p) => fromPoint(sv, p, false, true));
+    });
+    hueEl?.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      fromPoint(hueEl, ev, true, false);
+      drag(hueEl, (p) => fromPoint(hueEl, p, true, false));
+    });
+    valueEl?.addEventListener("input", () => {
+      hsv.v = Number(valueEl.value) / 100;
+      paint();
+    });
+    hexEl?.addEventListener("change", () => {
+      hsv = hexToHsv(hexEl.value);
+      paint();
+    });
+    eyedrop?.addEventListener("click", async () => {
+      if (!window.EyeDropper) return;
+      try {
+        const result = await new window.EyeDropper().open();
+        hsv = hexToHsv(result.sRGBHex);
+        paint();
+      } catch (_) {}
+    });
+    document.querySelector("[data-picker-ok]")?.addEventListener("click", () => {
+      picker.hidden = true;
+      activeRow = null;
+    });
   }
 
   function bind() {
@@ -958,6 +1178,8 @@
       };
     });
 
+    bindColorPicker();
+
     document.querySelector("[data-login]")?.addEventListener("submit", (e) => {
       e.preventDefault();
       const password = new FormData(e.target).get("password");
@@ -978,8 +1200,13 @@
       const form = document.querySelector("[data-admin-form]");
       form?.reset();
       form.querySelector('[name="id"]').value = "";
+      setColorList([
+        { name: "Olivo", hex: "#4B5320" },
+        { name: "Negro", hex: "#1A1A1A" },
+      ]);
       const title = $("#form-title");
       if (title) title.textContent = "Nueva prenda";
+      document.querySelector("[data-picker]")?.setAttribute("hidden", "");
     });
     document.querySelector("[data-admin-form]")?.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -994,7 +1221,10 @@
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
-        colors: parseColors(fd.colors),
+        colors: (() => {
+          const list = readAdminColors();
+          return list.length ? list : [{ name: "Olivo", hex: "#4B5320" }];
+        })(),
         images: fd.image ? [String(fd.image).trim()] : ["https://images.unsplash.com/photo-1548449112-96a38a64381d?auto=format&fit=crop&w=900&q=80"],
         material: String(fd.material || "").trim(),
         weightG: null,
@@ -1015,7 +1245,7 @@
         form.priceSoles.value = p.priceSoles;
         form.stock.value = p.stock;
         form.sizes.value = (p.sizes || []).join(", ");
-        form.colors.value = (p.colors || []).map((c) => `${c.name}:${c.hex}`).join(", ");
+        setColorList(p.colors || []);
         form.image.value = p.images?.[0] || "";
         form.description.value = p.description;
         form.material.value = p.material || "";

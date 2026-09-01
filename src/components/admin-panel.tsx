@@ -1,5 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
-import { Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { Pencil, Pipette, Plus, Trash2, Upload } from "lucide-react";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 import { ProductImage } from "@/components/product-image";
@@ -331,6 +331,33 @@ export function AdminPanel({ products }: { products: Product[] }) {
                   className="h-11 w-14 cursor-pointer rounded-md bg-elevated p-1"
                   aria-label={`Color ${c.name}`}
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label="Cuentagotas"
+                  onClick={async () => {
+                    const Eye = (
+                      window as Window & {
+                        EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> };
+                      }
+                    ).EyeDropper;
+                    if (!Eye) {
+                      toast.error("El cuentagotas no está disponible en este navegador");
+                      return;
+                    }
+                    try {
+                      const { sRGBHex } = await new Eye().open();
+                      const colors = [...form.colors];
+                      colors[i] = { ...c, hex: sRGBHex };
+                      patch({ colors });
+                    } catch {
+                      /* cancelado */
+                    }
+                  }}
+                >
+                  <Pipette className="size-4" />
+                </Button>
                 <Button
                   type="button"
                   variant="ghost"
