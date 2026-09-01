@@ -17,6 +17,8 @@
   const SHIP_CITY = "Iquitos";
   const SHIP_REGION = "Loreto, Perú";
 
+  let drawerOpen = false;
+
   const $ = (sel) => document.querySelector(sel);
   const app = $("#app");
 
@@ -165,6 +167,94 @@
     return n ? `<span class="cart-badge">${n > 99 ? "99+" : n}</span>` : "";
   }
 
+  function drawerItemsHtml() {
+    const items = loadCart();
+    if (!items.length) {
+      return `<p class="muted" style="padding:0.75rem 0">Aún no hay prendas. Elige talla, color y cantidad en la ficha.</p>`;
+    }
+    return items
+      .map(
+        (item) => `<div class="drawer-row">
+          <img src="${item.image}" alt="" />
+          <div>
+            <p class="drawer-name">${escapeHtml(item.name)}</p>
+            <p class="muted">${escapeHtml(item.size)} · ${escapeHtml(item.color)} · ×${item.qty}</p>
+            <p>${money(item.priceSoles * item.qty)}</p>
+          </div>
+          <button class="icon-btn" type="button" data-cart-del="${escapeHtml(item.key)}" aria-label="Quitar">×</button>
+        </div>`,
+      )
+      .join("");
+  }
+
+  function drawerFootHtml() {
+    const n = cartCount();
+    if (!n) return "";
+    return `
+      <p>Total <strong>${money(cartTotal())}</strong></p>
+      <a class="btn" href="#/carrito" data-cart-expand>Ver carrito completo</a>
+      <a class="btn outline" href="#/comprar" data-cart-expand>Realizar compra</a>`;
+  }
+
+  function cartOverlayHtml() {
+    return `
+      <div class="cart-overlay" data-cart-overlay ${drawerOpen ? "" : "hidden"}>
+        <button class="cart-backdrop" type="button" data-cart-close aria-label="Cerrar carrito"></button>
+        <aside class="cart-drawer" aria-label="Carrito">
+          <div class="drawer-head">
+            <h2>Carrito</h2>
+            <button type="button" class="icon-btn" data-cart-close aria-label="Cerrar">×</button>
+          </div>
+          <div class="drawer-body" data-drawer-body>${drawerItemsHtml()}</div>
+          <div class="drawer-foot" data-drawer-foot>${drawerFootHtml()}</div>
+        </aside>
+      </div>`;
+  }
+
+  function openDrawer() {
+    drawerOpen = true;
+    const el = document.querySelector("[data-cart-overlay]");
+    if (el) el.hidden = false;
+  }
+
+  function closeDrawer() {
+    drawerOpen = false;
+    const el = document.querySelector("[data-cart-overlay]");
+    if (el) el.hidden = true;
+  }
+
+  function refreshCartUI() {
+    const link = document.querySelector(".cart-link");
+    if (link) {
+      link.querySelector(".cart-badge")?.remove();
+      const html = cartBadge();
+      if (html) link.insertAdjacentHTML("beforeend", html);
+    }
+    const body = document.querySelector("[data-drawer-body]");
+    const foot = document.querySelector("[data-drawer-foot]");
+    if (body) body.innerHTML = drawerItemsHtml();
+    if (foot) foot.innerHTML = drawerFootHtml();
+    bindCartDeletes();
+    document.querySelectorAll("[data-cart-expand]").forEach((link) => {
+      link.addEventListener("click", () => closeDrawer());
+    });
+  }
+
+  function onCartDelete(e) {
+    const btn = e.currentTarget;
+    removeCartItem(btn.getAttribute("data-cart-del"));
+    const { parts } = parseHash();
+    if (parts[0] === "carrito" || parts[0] === "comprar") render();
+    else refreshCartUI();
+  }
+
+  function bindCartDeletes() {
+    document.querySelectorAll("[data-cart-del]").forEach((btn) => {
+      btn.removeEventListener("click", onCartDelete);
+      btn.addEventListener("click", onCartDelete);
+    });
+  }
+
   function upsertProduct(input, id) {
     const list = products();
     if (id) {
@@ -228,7 +318,7 @@
                 .join("")}
             </nav>
             <div class="nav-actions">
-              <a class="icon-btn cart-link ${here === "carrito" || here === "comprar" ? "active" : ""}" href="#/carrito" aria-label="Carrito">
+              <button class="icon-btn cart-link" type="button" data-cart-toggle aria-label="Abrir carrito">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                   <path d="M6 6h15l-1.5 9h-12z"/>
                   <path d="M6 6 5 3H2"/>
@@ -236,7 +326,7 @@
                   <circle cx="18" cy="20" r="1.3"/>
                 </svg>
                 ${cartBadge()}
-              </a>
+              </button>
               <a class="ghost-btn ${here === "admin" ? "active" : ""}" href="#/admin">Administrador</a>
               <button class="menu-btn" type="button" data-menu aria-label="Abrir menú">☰</button>
             </div>
@@ -249,6 +339,7 @@
             <a href="#/admin">Administrador</a>
           </nav>
         </header>
+        ${cartOverlayHtml()}
         <main>${content}</main>
         <footer class="site-foot">
           <div class="wrap foot-grid">
@@ -675,6 +766,17 @@
       $("#mobile-menu")?.classList.toggle("open");
     });
 
+    document.querySelector("[data-cart-toggle]")?.addEventListener("click", () => {
+      if (drawerOpen) closeDrawer();
+      else openDrawer();
+    });
+    document.querySelectorAll("[data-cart-close]").forEach((btn) => {
+      btn.addEventListener("click", () => closeDrawer());
+    });
+    document.querySelectorAll("[data-cart-expand]").forEach((link) => {
+      link.addEventListener("click", () => closeDrawer());
+    });
+
     document.querySelector("[data-search]")?.addEventListener("submit", (e) => {
       e.preventDefault();
       const q = new FormData(e.target).get("q");
@@ -726,15 +828,21 @@
         err.textContent = msg;
         return;
       }
-      render();
-      go("#/carrito");
+      if (err) err.hidden = true;
+      refreshCartUI();
+      openDrawer();
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) {
+        const prev = btn.textContent;
+        btn.textContent = "Añadido";
+        setTimeout(() => {
+          if (btn.textContent === "Añadido") btn.textContent = prev;
+        }, 1400);
+      }
     });
 
     document.querySelectorAll("[data-cart-del]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        removeCartItem(btn.getAttribute("data-cart-del"));
-        render();
-      });
+      btn.addEventListener("click", onCartDelete);
     });
     document.querySelectorAll("[data-cart-qty]").forEach((input) => {
       input.addEventListener("change", () => {
