@@ -2,6 +2,7 @@
   const WHATSAPP = "51955802712";
   const ADMIN_PASSWORD = "589";
   const STORE_KEY = "atlas-tactico-store-v1";
+  const CART_KEY = "atlas-tactico-cart-v1";
   const SESSION_KEY = "atlas-tactico-admin";
 
   const CATEGORIES = [
@@ -84,6 +85,86 @@
     return list.find((p) => String(p.id) === String(id));
   }
 
+  function loadCart() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+      if (Array.isArray(parsed)) return parsed;
+    } catch (_) {}
+    return [];
+  }
+
+  function saveCart(list) {
+    localStorage.setItem(CART_KEY, JSON.stringify(list));
+  }
+
+  function cartCount() {
+    return loadCart().reduce((n, i) => n + Number(i.qty || 0), 0);
+  }
+
+  function cartTotal() {
+    return loadCart().reduce((n, i) => n + Number(i.priceSoles) * Number(i.qty), 0);
+  }
+
+  function qtyInCart(productId, exceptKey) {
+    return loadCart()
+      .filter((i) => String(i.productId) === String(productId) && i.key !== exceptKey)
+      .reduce((n, i) => n + Number(i.qty || 0), 0);
+  }
+
+  function addToCart({ productId, size, color, qty }) {
+    const p = byId(productId);
+    if (!p) return "Producto no encontrado.";
+    if (p.stock <= 0) return "Esta prenda está agotada.";
+    const n = Math.max(1, Number(qty) || 1);
+    const key = `${p.id}|${size}|${color}`;
+    const cart = loadCart();
+    const existing = cart.find((i) => i.key === key);
+    const nextQty = (existing ? existing.qty : 0) + n;
+    if (qtyInCart(p.id, key) + nextQty > p.stock) {
+      return `Solo hay ${p.stock} unidades de esta prenda.`;
+    }
+    if (existing) existing.qty = nextQty;
+    else {
+      cart.push({
+        key,
+        productId: p.id,
+        name: p.name,
+        image: p.images[0] || "",
+        priceSoles: p.priceSoles,
+        size,
+        color,
+        qty: n,
+      });
+    }
+    saveCart(cart);
+    return "";
+  }
+
+  function setCartQty(key, qty) {
+    const cart = loadCart();
+    const item = cart.find((i) => i.key === key);
+    if (!item) return;
+    const p = byId(item.productId);
+    const n = Math.max(1, Number(qty) || 1);
+    if (p && qtyInCart(p.id, key) + n > p.stock) {
+      item.qty = Math.max(1, p.stock - qtyInCart(p.id, key));
+    } else item.qty = n;
+    saveCart(cart);
+  }
+
+  function removeCartItem(key) {
+    saveCart(loadCart().filter((i) => i.key !== key));
+  }
+
+  function clearCart() {
+    saveCart([]);
+  }
+
+  function cartBadge() {
+    const n = cartCount();
+    return n ? `<span class="cart-badge">${n > 99 ? "99+" : n}</span>` : "";
+  }
+
   function upsertProduct(input, id) {
     const list = products();
     if (id) {
@@ -147,7 +228,15 @@
                 .join("")}
             </nav>
             <div class="nav-actions">
-              <a class="icon-btn" href="#/catalogo" aria-label="Buscar">⌕</a>
+              <a class="icon-btn cart-link ${here === "carrito" || here === "comprar" ? "active" : ""}" href="#/carrito" aria-label="Carrito">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M6 6h15l-1.5 9h-12z"/>
+                  <path d="M6 6 5 3H2"/>
+                  <circle cx="9" cy="20" r="1.3"/>
+                  <circle cx="18" cy="20" r="1.3"/>
+                </svg>
+                ${cartBadge()}
+              </a>
               <a class="ghost-btn ${here === "admin" ? "active" : ""}" href="#/admin">Administrador</a>
               <button class="menu-btn" type="button" data-menu aria-label="Abrir menú">☰</button>
             </div>
@@ -156,6 +245,7 @@
             <a href="#/">Inicio</a>
             <a href="#/catalogo">Catálogo</a>
             ${CATEGORIES.map((c) => `<a href="#/catalogo?categoria=${c.slug}">${c.label}</a>`).join("")}
+            <a href="#/carrito">Carrito ${cartCount() ? `(${cartCount()})` : ""}</a>
             <a href="#/admin">Administrador</a>
           </nav>
         </header>
@@ -174,6 +264,7 @@
               <p class="subtle">Catálogo</p>
               <ul>
                 <li><a href="#/catalogo">Ver todo</a></li>
+                <li><a href="#/carrito">Carrito</a></li>
                 <li><a href="#/admin">Administrador</a></li>
               </ul>
             </div>
@@ -342,13 +433,23 @@
                 : ""
             }
             <p class="muted" style="margin-top:1.6rem">${escapeHtml(p.description)}</p>
-            <div style="margin-top:1.5rem">
+            <form data-add-cart="${p.id}" style="margin-top:1.5rem">
+              <input type="hidden" name="color" value="${escapeHtml(p.colors[0]?.name || "")}" />
+              <input type="hidden" name="size" value="${escapeHtml(p.sizes[0] || "")}" />
               ${
                 soldOut
-                  ? `<button class="btn lg" disabled>Agotado</button>`
-                  : `<a class="btn lg" href="#/comprar/${p.id}">Comprar por WhatsApp</a>`
+                  ? `<button class="btn lg" type="button" disabled>Agotado</button>`
+                  : `<div class="field" style="max-width:8rem;margin-bottom:0.85rem">
+                      <label>Cantidad</label>
+                      <input name="qty" type="number" min="1" max="${p.stock}" value="1" required />
+                    </div>
+                    <p class="error" data-err hidden></p>
+                    <div class="hero-actions">
+                      <button class="btn lg" type="submit">Añadir al carrito</button>
+                      <a class="btn lg outline" href="#/carrito">Ver carrito</a>
+                    </div>`
               }
-            </div>
+            </form>
           </div>
         </article>
         <div class="panels">
@@ -378,42 +479,78 @@
       </div>`;
   }
 
-  function checkoutPage(id) {
-    const p = byId(id);
-    if (!p) return `<div class="wrap empty">Producto no encontrado.</div>`;
-    if (p.stock <= 0) {
-      return `<div class="wrap" style="padding:3rem 0"><h1>Agotado</h1><p class="muted" style="margin-top:0.5rem">Esta prenda no tiene unidades disponibles.</p><p style="margin-top:1rem"><a class="btn" href="#/producto/${p.id}">Volver</a></p></div>`;
+  function cartPage() {
+    const items = loadCart().map((item) => {
+      const p = byId(item.productId);
+      return { ...item, stock: p ? p.stock : 0, missing: !p };
+    });
+    if (!items.length) {
+      return `
+        <div class="wrap" style="padding:3rem 0">
+          <p class="kicker">Carrito</p>
+          <h1 style="margin-top:0.4rem;font-size:2.4rem">Tu carrito está vacío</h1>
+          <p class="muted" style="margin-top:0.5rem">Añade prendas desde el catálogo. En cada producto eliges talla, color y cantidad.</p>
+          <p style="margin-top:1.25rem"><a class="btn" href="#/catalogo">Ir al catálogo</a></p>
+        </div>`;
+    }
+    return `
+      <div class="wrap" style="padding:2rem 0 3rem;max-width:52rem">
+        <p class="kicker">Carrito</p>
+        <h1 style="margin-top:0.4rem;font-size:2.4rem">Tus prendas</h1>
+        <p class="muted" style="margin-top:0.5rem">${cartCount()} artículo${cartCount() === 1 ? "" : "s"} · Envíos solo en Iquitos</p>
+        <div class="cart-list">
+          ${items
+            .map(
+              (item) => `<div class="cart-row">
+                <img src="${item.image}" alt="" />
+                <div>
+                  <h3><a href="#/producto/${item.productId}">${escapeHtml(item.name)}</a></h3>
+                  <p class="muted">Talla ${escapeHtml(item.size)} · ${escapeHtml(item.color)}</p>
+                  <p class="muted">${money(item.priceSoles)} c/u</p>
+                  ${item.missing ? `<p class="error">Esta prenda ya no está en el catálogo.</p>` : ""}
+                </div>
+                <div class="cart-side">
+                  <input data-cart-qty="${escapeHtml(item.key)}" type="number" min="1" max="${item.stock || 1}" value="${item.qty}" />
+                  <strong>${money(item.priceSoles * item.qty)}</strong>
+                  <button class="btn danger" type="button" data-cart-del="${escapeHtml(item.key)}">Quitar</button>
+                </div>
+              </div>`,
+            )
+            .join("")}
+        </div>
+        <div class="cart-total">
+          <p>Total <strong>${money(cartTotal())}</strong></p>
+          <a class="btn lg" href="#/comprar">Realizar compra</a>
+        </div>
+      </div>`;
+  }
+
+  function buyerPage() {
+    const items = loadCart();
+    if (!items.length) {
+      return `
+        <div class="wrap" style="padding:3rem 0">
+          <h1>El carrito está vacío</h1>
+          <p class="muted" style="margin-top:0.5rem">Añade prendas antes de completar la compra.</p>
+          <p style="margin-top:1rem"><a class="btn" href="#/catalogo">Ir al catálogo</a></p>
+        </div>`;
     }
     return `
       <div class="wrap" style="padding:2rem 0 3rem;max-width:44rem">
-        <p class="kicker">Pedido</p>
-        <h1 style="margin-top:0.4rem;font-size:2.4rem">Datos de envío</h1>
-        <p class="muted" style="margin-top:0.5rem">Envíos solo en Iquitos. Al confirmar se descuenta el stock y se abre WhatsApp al +51 955 802 712.</p>
+        <p class="kicker">Paso 2</p>
+        <h1 style="margin-top:0.4rem;font-size:2.4rem">Datos del comprador</h1>
+        <p class="muted" style="margin-top:0.5rem">Envíos solo en Iquitos. Revisa el pedido y confirma antes de abrir WhatsApp.</p>
         <div class="panel" style="margin:1.25rem 0">
-          <p class="subtle">${LABEL[p.category] || ""}</p>
-          <h2 style="margin-top:0.3rem">${escapeHtml(p.name)}</h2>
-          <p style="margin-top:0.4rem">${money(p.priceSoles)} · ${stockLabel(p.stock)}</p>
+          ${items
+            .map(
+              (i) =>
+                `<p style="padding:0.35rem 0">${escapeHtml(i.qty + " × " + i.name)} <span class="muted">(${escapeHtml(i.size)} · ${escapeHtml(i.color)})</span> — ${money(i.priceSoles * i.qty)}</p>`,
+            )
+            .join("")}
+          <p style="margin-top:0.6rem"><strong>Total ${money(cartTotal())}</strong></p>
+          <p style="margin-top:0.5rem"><a class="muted" href="#/carrito">Editar carrito</a></p>
         </div>
-        <form class="form-card" data-checkout="${p.id}" novalidate>
-          <div class="field">
-            <label>Talla</label>
-            <select name="size">${p.sizes.map((s) => `<option>${escapeHtml(s)}</option>`).join("")}</select>
-          </div>
-          <fieldset class="field" style="border:0;padding:0">
-            <legend class="subtle">Color</legend>
-            <input type="hidden" name="color" value="${escapeHtml(p.colors[0]?.name || "")}" />
-            <div class="choices">
-              ${(p.colors || [])
-                .map(
-                  (c, i) =>
-                    `<button type="button" class="choice ${i === 0 ? "on" : ""}" data-color="${escapeHtml(c.name)}"><span class="swatch swatch-lg" style="background:${c.hex}"></span>${escapeHtml(c.name)}</button>`,
-                )
-                .join("")}
-            </div>
-          </fieldset>
-          <div class="field"><label>Cantidad</label>
-            <input name="qty" type="number" min="1" max="${p.stock}" value="1" required />
-          </div>
+        <form class="form-card" data-checkout novalidate>
           <div class="field"><label>Nombre completo</label>
             <input name="name" required maxlength="80" autocomplete="name" placeholder="Nombre y apellido" />
           </div>
@@ -442,7 +579,7 @@
         <div class="modal" data-preview hidden>
           <div class="modal-card">
             <p class="kicker">Vista previa</p>
-            <h2 style="margin-top:0.35rem">Confirma tus datos</h2>
+            <h2 style="margin-top:0.35rem">Confirma tu pedido</h2>
             <dl class="preview-list" data-preview-body></dl>
             <div class="preview-actions">
               <button class="btn outline" type="button" data-preview-edit>Editar</button>
@@ -560,7 +697,7 @@
       btn.addEventListener("click", () => {
         document.querySelectorAll("[data-color]").forEach((b) => b.classList.remove("on"));
         btn.classList.add("on");
-        const hidden = document.querySelector('form[data-checkout] [name="color"]');
+        const hidden = document.querySelector('[data-add-cart] [name="color"]');
         if (hidden) hidden.value = btn.getAttribute("data-color") || "";
       });
     });
@@ -568,33 +705,73 @@
       btn.addEventListener("click", () => {
         document.querySelectorAll("[data-size]").forEach((b) => b.classList.remove("on"));
         btn.classList.add("on");
+        const hidden = document.querySelector('[data-add-cart] [name="size"]');
+        if (hidden) hidden.value = btn.getAttribute("data-size") || "";
+      });
+    });
+
+    document.querySelector("[data-add-cart]")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const err = form.querySelector("[data-err]");
+      const data = Object.fromEntries(new FormData(form).entries());
+      const msg = addToCart({
+        productId: form.getAttribute("data-add-cart"),
+        size: data.size,
+        color: data.color,
+        qty: data.qty,
+      });
+      if (msg) {
+        err.hidden = false;
+        err.textContent = msg;
+        return;
+      }
+      render();
+      go("#/carrito");
+    });
+
+    document.querySelectorAll("[data-cart-del]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        removeCartItem(btn.getAttribute("data-cart-del"));
+        render();
+      });
+    });
+    document.querySelectorAll("[data-cart-qty]").forEach((input) => {
+      input.addEventListener("change", () => {
+        setCartQty(input.getAttribute("data-cart-qty"), input.value);
+        render();
       });
     });
 
     document.querySelector("[data-checkout]")?.addEventListener("submit", (e) => {
       e.preventDefault();
       const form = e.target;
-      const id = form.getAttribute("data-checkout");
-      const p = byId(id);
       const err = form.querySelector("[data-err]");
       const modal = document.querySelector("[data-preview]");
-      if (!p || !modal) return;
-      const data = Object.fromEntries(new FormData(form).entries());
-      const qty = Math.max(1, Number(data.qty) || 1);
+      const items = loadCart();
+      if (!modal) return;
       const showError = (msg) => {
         err.hidden = false;
         err.textContent = msg;
         err.scrollIntoView({ behavior: "smooth", block: "center" });
       };
       err.hidden = true;
-      if (qty > p.stock) {
-        showError("No hay tantas unidades.");
+      if (!items.length) {
+        showError("El carrito está vacío.");
         return;
       }
-      if (!data.color) {
-        showError("Elige un color.");
-        return;
+      for (const item of items) {
+        const p = byId(item.productId);
+        if (!p) {
+          showError(`"${item.name}" ya no está en el catálogo. Quítalo del carrito.`);
+          return;
+        }
+        if (qtyInCart(p.id) > p.stock) {
+          showError(`No hay stock suficiente de ${p.name}.`);
+          return;
+        }
       }
+      const data = Object.fromEntries(new FormData(form).entries());
       const invalid = validateOrder(data);
       if (invalid) {
         showError(invalid);
@@ -605,12 +782,12 @@
       const address = String(data.address).trim();
       const ref = String(data.ref || "").trim();
       const dni = onlyDigits(data.dni);
-      const total = money(p.priceSoles * qty);
+      const total = money(cartTotal());
       const rows = [
-        ["Producto", p.name],
-        ["Talla", data.size],
-        ["Color", data.color],
-        ["Cantidad", String(qty)],
+        ...items.map((i) => [
+          `${i.qty} × ${i.name}`,
+          `${i.size} · ${i.color} · ${money(i.priceSoles * i.qty)}`,
+        ]),
         ["Total", total],
         ["Nombre", name],
         ["Celular", phone],
@@ -639,15 +816,24 @@
       modal.querySelector("[data-preview-send]").onclick = () => {
         const sendBtn = modal.querySelector("[data-preview-send]");
         sendBtn.disabled = true;
-        setStock(p.id, p.stock - qty);
+        const qtyByProduct = {};
+        for (const item of items) {
+          qtyByProduct[item.productId] = (qtyByProduct[item.productId] || 0) + Number(item.qty);
+        }
+        for (const [id, qty] of Object.entries(qtyByProduct)) {
+          const p = byId(id);
+          if (p) setStock(p.id, p.stock - qty);
+        }
+        clearCart();
+        const lines = items.map(
+          (i) =>
+            `• ${i.qty} × ${i.name} (${i.size}, ${i.color}) — ${money(i.priceSoles * i.qty)}`,
+        );
         const msg = [
           "Pedido ATLAS TÁCTICO",
           "",
-          `Producto: ${p.name}`,
-          `Talla: ${data.size}`,
-          `Color: ${data.color}`,
-          `Cantidad: ${qty}`,
-          `Precio unitario: ${money(p.priceSoles)}`,
+          "Prendas",
+          ...lines,
           `Total: ${total}`,
           "",
           "Comprador",
@@ -748,7 +934,8 @@
       let inner = home();
       if (parts[0] === "catalogo") inner = catalog();
       else if (parts[0] === "producto") inner = productPage(parts[1]);
-      else if (parts[0] === "comprar") inner = checkoutPage(parts[1]);
+      else if (parts[0] === "carrito") inner = cartPage();
+      else if (parts[0] === "comprar") inner = buyerPage();
       else if (parts[0] === "admin") inner = adminPage();
       app.innerHTML = layout(inner);
       bind();
