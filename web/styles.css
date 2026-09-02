@@ -125,7 +125,7 @@ header.nav {
 
 .hero {
   position: relative; overflow: hidden; border-bottom: 1px solid var(--border);
-  min-height: 72svh; display: flex; align-items: flex-end;
+  display: flex; align-items: flex-end;
 }
 .hero-bg {
   position: absolute; inset: 0;
@@ -133,11 +133,11 @@ header.nav {
   opacity: 0.3;
 }
 .hero-bg::after { content: ""; position: absolute; inset: 0; background: color-mix(in oklab, var(--bg) 80%, transparent); }
-.hero-inner { position: relative; padding: 4rem 1rem; width: 100%; max-width: 72rem; margin: 0 auto; }
+.hero-inner { position: relative; padding: 3rem 1rem 2.5rem; width: 100%; max-width: 72rem; margin: 0 auto; }
 .kicker { font-size: 0.75rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--primary); }
-.hero h1 { margin-top: 0.75rem; max-width: 36rem; font-size: clamp(2.5rem, 7vw, 4.5rem); font-weight: 600; }
-.hero p { margin-top: 1rem; max-width: 32rem; color: var(--muted); font-size: 1.05rem; }
-.hero-actions { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.hero h1 { margin-top: 0.45rem; font-size: clamp(2.1rem, 5.5vw, 3.25rem); font-weight: 600; }
+.hero p { margin-top: 0.75rem; max-width: 32rem; color: var(--muted); font-size: 1.05rem; }
+.hero-actions { margin-top: 1.35rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
 
 .section { padding: 3rem 0; }
 .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }

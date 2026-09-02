@@ -26,14 +26,14 @@ function Home() {
           }}
         />
         <div className="absolute inset-0 bg-bg/80" />
-        <div className="relative mx-auto flex min-h-[72svh] max-w-6xl flex-col justify-end px-4 py-16">
+        <div className="relative mx-auto flex max-w-6xl flex-col justify-end px-4 py-12 md:py-14">
           <p className="text-xs tracking-[0.28em] text-primary uppercase">
             Equipo de servicio
           </p>
-          <h1 className="mt-3 max-w-2xl font-display text-5xl font-semibold tracking-tight md:text-7xl">
+          <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight md:text-5xl">
             Catálogo táctico
           </h1>
-          <p className="mt-4 max-w-lg text-base text-muted md:text-lg">
+          <p className="mt-3 max-w-lg text-base text-muted md:text-lg">
             Uniformes, calzado, chalecos y accesorios. Vista simple del
             catálogo; ficha completa al entrar en cada producto. Precios en
             soles.
