@@ -31,7 +31,7 @@ function Home() {
             Equipo de servicio
           </p>
           <h1 className="mt-3 max-w-2xl font-display text-5xl font-semibold tracking-tight md:text-7xl">
-            Catálogo táctico para quien sirve.
+            Catálogo táctico
           </h1>
           <p className="mt-4 max-w-lg text-base text-muted md:text-lg">
             Uniformes, calzado, chalecos y accesorios. Vista simple del

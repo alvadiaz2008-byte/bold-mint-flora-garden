@@ -407,7 +407,7 @@
         <div class="hero-bg"></div>
         <div class="hero-inner">
           <p class="kicker">Equipo de servicio</p>
-          <h1>Catálogo táctico para quien sirve.</h1>
+          <h1>Catálogo táctico</h1>
           <p>Uniformes, calzado, chalecos y accesorios. Vista simple del catálogo; ficha completa al entrar en cada producto. Precios en soles.</p>
           <div class="hero-actions">
             <a class="btn lg" href="#/catalogo">Ver catálogo →</a>
