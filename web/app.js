@@ -59,16 +59,81 @@
       const raw = localStorage.getItem(STORE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length) return parsed;
+        if (Array.isArray(parsed) && parsed.length) {
+          const need = parsed.some((p) => !Array.isArray(p.variants));
+          const next = parsed.map(ensureVariants);
+          if (need) saveProducts(next);
+          return next;
+        }
       }
     } catch (_) {}
-    const seed = (window.SEED_PRODUCTS || []).map((p) => ({ ...p }));
+    const seed = (window.SEED_PRODUCTS || []).map((p) => ensureVariants({ ...p }));
     saveProducts(seed);
     return seed;
   }
 
   function saveProducts(list) {
     localStorage.setItem(STORE_KEY, JSON.stringify(list));
+  }
+
+  function ensureVariants(p) {
+    if (Array.isArray(p.variants) && p.variants.length) {
+      const stock = p.variants.reduce((n, v) => n + Math.max(0, Number(v.stock) || 0), 0);
+      return { ...p, stock };
+    }
+    const sizes = p.sizes?.length ? p.sizes : ["Única"];
+    const colors = p.colors?.length ? p.colors : [{ name: "Olivo", hex: "#4B5320" }];
+    const total = Math.max(0, Math.floor(Number(p.stock) || 0));
+    const combos = sizes.length * colors.length || 1;
+    const base = Math.floor(total / combos);
+    let rest = total - base * combos;
+    const variants = [];
+    for (const size of sizes) {
+      for (const c of colors) {
+        const extra = rest > 0 ? 1 : 0;
+        rest -= extra;
+        variants.push({
+          size,
+          color: c.name,
+          hex: c.hex || "#4B5320",
+          stock: base + extra,
+        });
+      }
+    }
+    return { ...p, variants, stock: total };
+  }
+
+  function productSizes(p) {
+    const fromV = [...new Set((p.variants || []).map((v) => v.size))];
+    return fromV.length ? fromV : p.sizes || [];
+  }
+
+  function productColors(p, size) {
+    let list = p.variants || [];
+    if (size) list = list.filter((v) => v.size === size);
+    const seen = new Map();
+    for (const v of list) {
+      if (!seen.has(v.color)) {
+        seen.set(v.color, { name: v.color, hex: v.hex || "#4B5320" });
+      }
+    }
+    if (seen.size) return [...seen.values()];
+    return p.colors || [];
+  }
+
+  function variantStock(p, size, color) {
+    const v = (p.variants || []).find(
+      (x) => x.size === size && x.color === color,
+    );
+    if (v) return Math.max(0, Number(v.stock) || 0);
+    return Math.max(0, Number(p.stock) || 0);
+  }
+
+  function totalStock(p) {
+    if (p.variants?.length) {
+      return p.variants.reduce((n, v) => n + Math.max(0, Number(v.stock) || 0), 0);
+    }
+    return Math.max(0, Number(p.stock) || 0);
   }
 
   function products() {
@@ -79,10 +144,17 @@
     return products().find((p) => String(p.id) === String(id));
   }
 
-  function setStock(id, next) {
-    const list = products().map((p) =>
-      String(p.id) === String(id) ? { ...p, stock: Math.max(0, next) } : p,
-    );
+  function setVariantStock(id, size, color, next) {
+    const list = products().map((p) => {
+      if (String(p.id) !== String(id)) return p;
+      const variants = (p.variants || []).map((v) =>
+        v.size === size && v.color === color
+          ? { ...v, stock: Math.max(0, next) }
+          : v,
+      );
+      const stock = variants.reduce((n, v) => n + Math.max(0, Number(v.stock) || 0), 0);
+      return { ...p, variants, stock };
+    });
     saveProducts(list);
     return list.find((p) => String(p.id) === String(id));
   }
@@ -107,23 +179,31 @@
     return loadCart().reduce((n, i) => n + Number(i.priceSoles) * Number(i.qty), 0);
   }
 
-  function qtyInCart(productId, exceptKey) {
+  function qtyInCartVariant(productId, size, color, exceptKey) {
     return loadCart()
-      .filter((i) => String(i.productId) === String(productId) && i.key !== exceptKey)
+      .filter(
+        (i) =>
+          String(i.productId) === String(productId) &&
+          i.size === size &&
+          i.color === color &&
+          i.key !== exceptKey,
+      )
       .reduce((n, i) => n + Number(i.qty || 0), 0);
   }
 
   function addToCart({ productId, size, color, qty }) {
     const p = byId(productId);
     if (!p) return "Producto no encontrado.";
-    if (p.stock <= 0) return "Esta prenda está agotada.";
+    if (!size || !color) return "Elige talla y color.";
+    const have = variantStock(p, size, color);
+    if (have <= 0) return `Agotado en talla ${size} / ${color}.`;
     const n = Math.max(1, Number(qty) || 1);
     const key = `${p.id}|${size}|${color}`;
     const cart = loadCart();
     const existing = cart.find((i) => i.key === key);
     const nextQty = (existing ? existing.qty : 0) + n;
-    if (qtyInCart(p.id, key) + nextQty > p.stock) {
-      return `Solo hay ${p.stock} unidades de esta prenda.`;
+    if (nextQty > have) {
+      return `Solo hay ${have} unidades en talla ${size}, color ${color}.`;
     }
     if (existing) existing.qty = nextQty;
     else {
@@ -148,9 +228,8 @@
     if (!item) return;
     const p = byId(item.productId);
     const n = Math.max(1, Number(qty) || 1);
-    if (p && qtyInCart(p.id, key) + n > p.stock) {
-      item.qty = Math.max(1, p.stock - qtyInCart(p.id, key));
-    } else item.qty = n;
+    const have = p ? variantStock(p, item.size, item.color) : n;
+    item.qty = Math.min(n, Math.max(1, have));
     saveCart(cart);
   }
 
@@ -375,9 +454,9 @@
         <div class="card-foot">
           <div>
             <p>${money(p.priceSoles)}</p>
-            ${stockLabel(p.stock)}
+            ${stockLabel(totalStock(p))}
           </div>
-          <div class="swatches">${(p.colors || [])
+          <div class="swatches">${productColors(p)
             .slice(0, 4)
             .map((c) => `<span class="swatch" title="${escapeHtml(c.name)}" style="background:${c.hex}"></span>`)
             .join("")}</div>
@@ -465,7 +544,12 @@
     const related = products()
       .filter((x) => x.category === p.category && x.id !== p.id)
       .slice(0, 4);
-    const soldOut = p.stock <= 0;
+    const sizes = productSizes(p);
+    const size0 = sizes[0] || "";
+    const colors = productColors(p, size0);
+    const color0 = colors[0]?.name || "";
+    const available = variantStock(p, size0, color0);
+    const soldOut = totalStock(p) <= 0;
     return `
       <div class="wrap">
         <nav class="crumbs">
@@ -492,28 +576,13 @@
             <h1 style="margin-top:0.7rem;font-size:clamp(2rem,5vw,3rem)">${escapeHtml(p.name)}</h1>
             <p class="price">${money(p.priceSoles)}</p>
             <p class="muted" style="font-size:0.9rem">Precio en soles (PEN)</p>
-            <p style="margin-top:0.75rem">${stockLabel(p.stock)}</p>
+            <p style="margin-top:0.75rem" data-variant-stock>${stockLabel(available)}</p>
             ${
-              p.colors?.length
+              sizes.length
                 ? `<fieldset style="border:0;padding:0;margin-top:1.6rem">
-                    <legend class="subtle">Color</legend>
-                    <div class="choices" id="color-choices">
-                      ${p.colors
-                        .map(
-                          (c, i) =>
-                            `<button type="button" class="choice ${i === 0 ? "on" : ""}" data-color="${escapeHtml(c.name)}"><span class="swatch" style="background:${c.hex}"></span>${escapeHtml(c.name)}</button>`,
-                        )
-                        .join("")}
-                    </div>
-                  </fieldset>`
-                : ""
-            }
-            ${
-              p.sizes?.length
-                ? `<fieldset style="border:0;padding:0;margin-top:1.2rem">
                     <legend class="subtle">Talla</legend>
                     <div class="choices" id="size-choices">
-                      ${p.sizes
+                      ${sizes
                         .map(
                           (s, i) =>
                             `<button type="button" class="size ${i === 0 ? "on" : ""}" data-size="${escapeHtml(s)}">${escapeHtml(s)}</button>`,
@@ -523,20 +592,36 @@
                   </fieldset>`
                 : ""
             }
+            ${
+              colors.length
+                ? `<fieldset style="border:0;padding:0;margin-top:1.2rem">
+                    <legend class="subtle">Color</legend>
+                    <div class="choices" id="color-choices">
+                      ${colors
+                        .map((c, i) => {
+                          const n = variantStock(p, size0, c.name);
+                          const out = n <= 0;
+                          return `<button type="button" class="choice ${i === 0 ? "on" : ""} ${out ? "off" : ""}" data-color="${escapeHtml(c.name)}" ${out ? "disabled" : ""}><span class="swatch" style="background:${c.hex}"></span>${escapeHtml(c.name)}</button>`;
+                        })
+                        .join("")}
+                    </div>
+                  </fieldset>`
+                : ""
+            }
             <p class="muted" style="margin-top:1.6rem">${escapeHtml(p.description)}</p>
             <form data-add-cart="${p.id}" style="margin-top:1.5rem">
-              <input type="hidden" name="color" value="${escapeHtml(p.colors[0]?.name || "")}" />
-              <input type="hidden" name="size" value="${escapeHtml(p.sizes[0] || "")}" />
+              <input type="hidden" name="color" value="${escapeHtml(color0)}" />
+              <input type="hidden" name="size" value="${escapeHtml(size0)}" />
               ${
                 soldOut
                   ? `<button class="btn lg" type="button" disabled>Agotado</button>`
                   : `<div class="field" style="max-width:8rem;margin-bottom:0.85rem">
                       <label>Cantidad</label>
-                      <input name="qty" type="number" min="1" max="${p.stock}" value="1" required />
+                      <input name="qty" type="number" min="1" max="${Math.max(1, available)}" value="1" required />
                     </div>
                     <p class="error" data-err hidden></p>
                     <div class="hero-actions">
-                      <button class="btn lg" type="submit">Añadir al carrito</button>
+                      <button class="btn lg" type="submit" ${available <= 0 ? "disabled" : ""}>Añadir al carrito</button>
                       <a class="btn lg outline" href="#/carrito">Ver carrito</a>
                     </div>`
               }
@@ -573,7 +658,7 @@
   function cartPage() {
     const items = loadCart().map((item) => {
       const p = byId(item.productId);
-      return { ...item, stock: p ? p.stock : 0, missing: !p };
+      return { ...item, stock: p ? variantStock(p, item.size, item.color) : 0, missing: !p };
     });
     if (!items.length) {
       return `
@@ -718,16 +803,16 @@
             </div>
             <div class="field"><label>Precio (S/)</label><input name="priceSoles" type="number" min="1" step="0.01" required /></div>
           </div>
-          <div class="form-grid two">
-            <div class="field"><label>Stock (unidades)</label><input name="stock" type="number" min="0" step="1" required value="10" /></div>
-            <div class="field"><label>Tallas (separadas por coma)</label><input name="sizes" value="S, M, L, XL" /></div>
-          </div>
           <div class="field">
-            <label>Colores</label>
-            <div class="color-list" data-color-list>
-              ${colorRowHtml("Olivo", "#4B5320")}${colorRowHtml("Negro", "#1A1A1A")}
+            <label>Tallas, colores y stock</label>
+            <p class="hint">Añade una talla, luego sus colores y la cantidad de cada uno. Repite con las demás tallas.</p>
+            <div data-inv>
+              ${invSizeHtml("S", [
+                { name: "Olivo", hex: "#4B5320", stock: 10 },
+                { name: "Negro", hex: "#1A1A1A", stock: 10 },
+              ])}
             </div>
-            <button class="btn outline" type="button" data-add-color>Añadir color</button>
+            <button class="btn outline" type="button" data-add-size>Añadir talla</button>
             <div class="picker" data-picker hidden>
               <p class="subtle">Elige el color</p>
               <div class="picker-sv" data-sv>
@@ -759,7 +844,7 @@
                 <img src="${p.images[0] || ""}" alt="" />
                 <div>
                   <h3>${escapeHtml(p.name)}</h3>
-                  <p class="muted">${money(p.priceSoles)} · ${stockLabel(p.stock)}</p>
+                  <p class="muted">${money(p.priceSoles)} · ${stockLabel(totalStock(p))}</p>
                 </div>
                 <div class="row-actions">
                   <button class="btn outline" data-edit="${p.id}">Editar</button>
@@ -823,35 +908,91 @@
     return ("#" + to(f(5)) + to(f(3)) + to(f(1))).toUpperCase();
   }
 
-  function colorRowHtml(name, hex) {
+  function colorRowHtml(name, hex, stock) {
     const safe = normalizeHex(hex);
+    const n = Math.max(0, Number(stock) || 0);
     return `<div class="color-row">
       <button type="button" class="color-chip" data-open-picker style="background:${safe}" aria-label="Elegir color"></button>
       <input type="text" data-color-name value="${escapeHtml(name)}" placeholder="Nombre del color" maxlength="40" />
       <input type="hidden" data-color-hex value="${safe}" />
+      <input type="number" data-inv-stock min="0" step="1" value="${n}" aria-label="Cantidad" />
       <button type="button" class="btn outline" data-remove-color>Quitar</button>
     </div>`;
   }
 
-  function readAdminColors() {
-    return [...document.querySelectorAll(".color-row")]
-      .map((row) => ({
-        name: row.querySelector("[data-color-name]")?.value.trim() || "Color",
-        hex: normalizeHex(row.querySelector("[data-color-hex]")?.value),
-      }))
-      .filter((c) => c.name);
+  function invSizeHtml(size, colors) {
+    const rows =
+      colors && colors.length
+        ? colors
+        : [{ name: "Olivo", hex: "#4B5320", stock: 0 }];
+    return `<div class="inv-size" data-inv-size>
+      <div class="inv-size-head">
+        <input data-inv-size-name value="${escapeHtml(size || "")}" placeholder="Talla (S, M, 42…)" maxlength="12" />
+        <button type="button" class="btn outline" data-remove-size>Quitar talla</button>
+      </div>
+      <p class="hint">Colores y unidades de esta talla</p>
+      <div class="color-list" data-color-list>
+        ${rows.map((c) => colorRowHtml(c.name, c.hex, c.stock)).join("")}
+      </div>
+      <button type="button" class="btn outline" data-add-inv-color>Añadir color a esta talla</button>
+    </div>`;
   }
 
-  function setColorList(colors) {
-    const list = document.querySelector("[data-color-list]");
-    if (!list) return;
-    const rows = colors.length
-      ? colors
+  function readAdminInventory() {
+    return [...document.querySelectorAll("[data-inv-size]")]
+      .map((block) => {
+        const size = block.querySelector("[data-inv-size-name]")?.value.trim() || "";
+        const colors = [...block.querySelectorAll(".color-row")].map((row) => ({
+          name: row.querySelector("[data-color-name]")?.value.trim() || "Color",
+          hex: normalizeHex(row.querySelector("[data-color-hex]")?.value),
+          stock: Math.max(0, Number(row.querySelector("[data-inv-stock]")?.value) || 0),
+        }));
+        return { size, colors };
+      })
+      .filter((g) => g.size && g.colors.length);
+  }
+
+  function setInventory(groups) {
+    const inv = document.querySelector("[data-inv]");
+    if (!inv) return;
+    const list = groups?.length
+      ? groups
       : [
-          { name: "Olivo", hex: "#4B5320" },
-          { name: "Negro", hex: "#1A1A1A" },
+          {
+            size: "S",
+            colors: [
+              { name: "Olivo", hex: "#4B5320", stock: 10 },
+              { name: "Negro", hex: "#1A1A1A", stock: 10 },
+            ],
+          },
         ];
-    list.innerHTML = rows.map((c) => colorRowHtml(c.name, c.hex)).join("");
+    inv.innerHTML = list.map((g) => invSizeHtml(g.size, g.colors)).join("");
+  }
+
+  function variantsFromInventory(inv) {
+    return inv.flatMap((g) =>
+      g.colors.map((c) => ({
+        size: g.size,
+        color: c.name,
+        hex: c.hex,
+        stock: c.stock,
+      })),
+    );
+  }
+
+  function inventoryFromProduct(p) {
+    const map = new Map();
+    for (const v of p.variants || []) {
+      if (!map.has(v.size)) map.set(v.size, []);
+      map.get(v.size).push({ name: v.color, hex: v.hex, stock: v.stock });
+    }
+    if (map.size) return [...map.entries()].map(([size, colors]) => ({ size, colors }));
+    const sizes = p.sizes?.length ? p.sizes : ["S"];
+    const colors = p.colors?.length ? p.colors : [{ name: "Olivo", hex: "#4B5320" }];
+    return sizes.map((size) => ({
+      size,
+      colors: colors.map((c) => ({ name: c.name, hex: c.hex, stock: 0 })),
+    }));
   }
 
   function bindColorPicker() {
@@ -927,12 +1068,24 @@
       window.addEventListener("touchend", up);
     }
 
-    document.querySelector("[data-color-list]")?.addEventListener("click", (e) => {
+    document.querySelector("[data-inv]")?.addEventListener("click", (e) => {
+      const sizeBlock = e.target.closest("[data-inv-size]");
+      if (e.target.closest("[data-add-inv-color]") && sizeBlock) {
+        const list = sizeBlock.querySelector("[data-color-list]");
+        list.insertAdjacentHTML("beforeend", colorRowHtml("Color", "#8A9A6A", 0));
+        openFor(list.querySelector(".color-row:last-child"));
+        return;
+      }
+      if (e.target.closest("[data-remove-size]") && sizeBlock) {
+        const wrap = document.querySelector("[data-inv]");
+        if (wrap && wrap.querySelectorAll("[data-inv-size]").length > 1) sizeBlock.remove();
+        return;
+      }
       const row = e.target.closest(".color-row");
       if (!row) return;
       if (e.target.closest("[data-open-picker]")) openFor(row);
       if (e.target.closest("[data-remove-color]")) {
-        const list = document.querySelector("[data-color-list]");
+        const list = row.closest("[data-color-list]");
         if (list && list.querySelectorAll(".color-row").length > 1) row.remove();
         if (activeRow === row) {
           picker.hidden = true;
@@ -941,11 +1094,14 @@
       }
     });
 
-    document.querySelector("[data-add-color]")?.addEventListener("click", () => {
-      const list = document.querySelector("[data-color-list]");
-      if (!list) return;
-      list.insertAdjacentHTML("beforeend", colorRowHtml("Color", "#8A9A6A"));
-      openFor(list.querySelector(".color-row:last-child"));
+    document.querySelector("[data-add-size]")?.addEventListener("click", () => {
+      const wrap = document.querySelector("[data-inv]");
+      if (!wrap) return;
+      wrap.insertAdjacentHTML(
+        "beforeend",
+        invSizeHtml("", [{ name: "Olivo", hex: "#4B5320", stock: 0 }]),
+      );
+      wrap.querySelector("[data-inv-size]:last-child [data-inv-size-name]")?.focus();
     });
 
     sv.addEventListener("pointerdown", (ev) => {
@@ -978,6 +1134,83 @@
       picker.hidden = true;
       activeRow = null;
     });
+  }
+
+  function bindVariantPicker() {
+    const form = document.querySelector("[data-add-cart]");
+    if (!form) return;
+    const p = byId(form.getAttribute("data-add-cart"));
+    if (!p) return;
+
+    function currentSize() {
+      return form.querySelector('[name="size"]')?.value || "";
+    }
+    function currentColor() {
+      return form.querySelector('[name="color"]')?.value || "";
+    }
+    function paintStock() {
+      const size = currentSize();
+      const color = currentColor();
+      const left = Math.max(
+        0,
+        variantStock(p, size, color) - qtyInCartVariant(p.id, size, color),
+      );
+      const el = document.querySelector("[data-variant-stock]");
+      if (el) el.innerHTML = stockLabel(left);
+      const qty = form.querySelector('[name="qty"]');
+      const btn = form.querySelector('button[type="submit"]');
+      if (qty) {
+        qty.max = String(Math.max(1, left));
+        if (Number(qty.value) > left) qty.value = String(left || 1);
+      }
+      if (btn) btn.disabled = left <= 0;
+    }
+    function bindColorButtons() {
+      document.querySelectorAll("#color-choices [data-color]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("#color-choices [data-color]").forEach((b) => b.classList.remove("on"));
+          btn.classList.add("on");
+          const hidden = form.querySelector('[name="color"]');
+          if (hidden) hidden.value = btn.getAttribute("data-color") || "";
+          paintStock();
+        });
+      });
+    }
+    function paintColors(size) {
+      const wrap = document.querySelector("#color-choices");
+      const colors = productColors(p, size);
+      const keep = currentColor();
+      const chosen =
+        colors.some((c) => c.name === keep && variantStock(p, size, c.name) > 0)
+          ? keep
+          : (colors.find((c) => variantStock(p, size, c.name) > 0) || colors[0])?.name || "";
+      if (wrap) {
+        wrap.innerHTML = colors
+          .map((c) => {
+            const out = variantStock(p, size, c.name) <= 0;
+            return `<button type="button" class="choice ${c.name === chosen ? "on" : ""} ${out ? "off" : ""}" data-color="${escapeHtml(c.name)}" ${out ? "disabled" : ""}><span class="swatch" style="background:${c.hex}"></span>${escapeHtml(c.name)}</button>`;
+          })
+          .join("");
+      }
+      const hidden = form.querySelector('[name="color"]');
+      if (hidden) hidden.value = chosen;
+      bindColorButtons();
+      paintStock();
+    }
+
+    document.querySelectorAll("[data-size]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-size]").forEach((b) => b.classList.remove("on"));
+        btn.classList.add("on");
+        const size = btn.getAttribute("data-size") || "";
+        const hidden = form.querySelector('[name="size"]');
+        if (hidden) hidden.value = size;
+        paintColors(size);
+      });
+    });
+    bindColorButtons();
+    paintStock();
+    form._paintStock = paintStock;
   }
 
   function bind() {
@@ -1015,22 +1248,7 @@
         if (photo && p?.images[i]) photo.src = p.images[i];
       });
     });
-    document.querySelectorAll("[data-color]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-color]").forEach((b) => b.classList.remove("on"));
-        btn.classList.add("on");
-        const hidden = document.querySelector('[data-add-cart] [name="color"]');
-        if (hidden) hidden.value = btn.getAttribute("data-color") || "";
-      });
-    });
-    document.querySelectorAll("[data-size]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-size]").forEach((b) => b.classList.remove("on"));
-        btn.classList.add("on");
-        const hidden = document.querySelector('[data-add-cart] [name="size"]');
-        if (hidden) hidden.value = btn.getAttribute("data-size") || "";
-      });
-    });
+    bindVariantPicker();
 
     document.querySelector("[data-add-cart]")?.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -1051,6 +1269,7 @@
       if (err) err.hidden = true;
       refreshCartUI();
       openDrawer();
+      form._paintStock?.();
       const btn = form.querySelector('button[type="submit"]');
       if (btn) {
         const prev = btn.textContent;
@@ -1094,8 +1313,8 @@
           showError(`"${item.name}" ya no está en el catálogo. Quítalo del carrito.`);
           return;
         }
-        if (qtyInCart(p.id) > p.stock) {
-          showError(`No hay stock suficiente de ${p.name}.`);
+        if (item.qty > variantStock(p, item.size, item.color)) {
+          showError(`No hay stock suficiente de ${p.name} (${item.size} / ${item.color}).`);
           return;
         }
       }
@@ -1144,13 +1363,15 @@
       modal.querySelector("[data-preview-send]").onclick = () => {
         const sendBtn = modal.querySelector("[data-preview-send]");
         sendBtn.disabled = true;
-        const qtyByProduct = {};
         for (const item of items) {
-          qtyByProduct[item.productId] = (qtyByProduct[item.productId] || 0) + Number(item.qty);
-        }
-        for (const [id, qty] of Object.entries(qtyByProduct)) {
-          const p = byId(id);
-          if (p) setStock(p.id, p.stock - qty);
+          const p = byId(item.productId);
+          if (!p) continue;
+          setVariantStock(
+            p.id,
+            item.size,
+            item.color,
+            variantStock(p, item.size, item.color) - Number(item.qty),
+          );
         }
         clearCart();
         const lines = items.map(
@@ -1200,31 +1421,35 @@
       const form = document.querySelector("[data-admin-form]");
       form?.reset();
       form.querySelector('[name="id"]').value = "";
-      setColorList([
-        { name: "Olivo", hex: "#4B5320" },
-        { name: "Negro", hex: "#1A1A1A" },
-      ]);
+      setInventory();
       const title = $("#form-title");
       if (title) title.textContent = "Nueva prenda";
       document.querySelector("[data-picker]")?.setAttribute("hidden", "");
     });
     document.querySelector("[data-admin-form]")?.addEventListener("submit", (e) => {
       e.preventDefault();
-      const fd = Object.fromEntries(new FormData(e.target).entries());
+      const form = e.target;
+      const fd = Object.fromEntries(new FormData(form).entries());
+      const inv = readAdminInventory();
+      if (!inv.length) {
+        window.alert("Añade al menos una talla con un color y su cantidad.");
+        return;
+      }
+      const variants = variantsFromInventory(inv);
+      const sizes = [...new Set(inv.map((g) => g.size))];
+      const colorMap = new Map();
+      for (const v of variants) {
+        if (!colorMap.has(v.color)) colorMap.set(v.color, { name: v.color, hex: v.hex });
+      }
       const input = {
         name: String(fd.name).trim(),
         description: String(fd.description).trim(),
         category: fd.category,
         priceSoles: Number(fd.priceSoles),
-        stock: Math.max(0, Number(fd.stock) || 0),
-        sizes: String(fd.sizes)
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        colors: (() => {
-          const list = readAdminColors();
-          return list.length ? list : [{ name: "Olivo", hex: "#4B5320" }];
-        })(),
+        variants,
+        sizes,
+        colors: [...colorMap.values()],
+        stock: variants.reduce((n, v) => n + Number(v.stock || 0), 0),
         images: fd.image ? [String(fd.image).trim()] : ["https://images.unsplash.com/photo-1548449112-96a38a64381d?auto=format&fit=crop&w=900&q=80"],
         material: String(fd.material || "").trim(),
         weightG: null,
@@ -1243,9 +1468,7 @@
         form.name.value = p.name;
         form.category.value = p.category;
         form.priceSoles.value = p.priceSoles;
-        form.stock.value = p.stock;
-        form.sizes.value = (p.sizes || []).join(", ");
-        setColorList(p.colors || []);
+        setInventory(inventoryFromProduct(p));
         form.image.value = p.images?.[0] || "";
         form.description.value = p.description;
         form.material.value = p.material || "";

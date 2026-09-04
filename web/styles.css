@@ -368,9 +368,21 @@ footer.site-foot { border-top: 1px solid var(--border); background: var(--surfac
 
 .color-list { display: grid; gap: 0.55rem; margin-bottom: 0.6rem; }
 .color-row {
-  display: grid; grid-template-columns: 2.75rem 1fr auto;
+  display: grid; grid-template-columns: 2.75rem 1fr 5.2rem auto;
   gap: 0.5rem; align-items: center;
 }
+.color-row [data-inv-stock] {
+  width: 100%; min-height: 2.75rem; padding: 0.35rem 0.5rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem;
+}
+.inv-size {
+  margin: 0.7rem 0; padding: 0.85rem;
+  background: var(--elevated); border-radius: 0.75rem;
+}
+.inv-size-head {
+  display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; margin-bottom: 0.4rem;
+}
+.choice.off, .choice:disabled { opacity: 0.38; cursor: not-allowed; }
 .color-chip {
   width: 2.75rem; height: 2.75rem; border-radius: 0.5rem; border: 0;
   box-shadow: var(--shadow); cursor: pointer;
