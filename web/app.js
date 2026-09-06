@@ -1303,7 +1303,6 @@
       refreshCartUI();
       popCartCount();
       showToast("Producto añadido");
-      openDrawer();
       form._paintStock?.();
       const btn = form.querySelector('button[type="submit"]');
       if (btn) {
