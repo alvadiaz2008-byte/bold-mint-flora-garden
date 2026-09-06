@@ -309,6 +309,8 @@
       const html = cartBadge();
       if (html) link.insertAdjacentHTML("beforeend", html);
     }
+    const mobile = document.querySelector("[data-cart-count]");
+    if (mobile) mobile.textContent = `Carrito (${cartCount()})`;
     const body = document.querySelector("[data-drawer-body]");
     const foot = document.querySelector("[data-drawer-foot]");
     if (body) body.innerHTML = drawerItemsHtml();
@@ -317,6 +319,37 @@
     document.querySelectorAll("[data-cart-expand]").forEach((link) => {
       link.addEventListener("click", () => closeDrawer());
     });
+  }
+
+  function popCartCount() {
+    const badge = document.querySelector(".cart-badge");
+    const mobile = document.querySelector("[data-cart-count]");
+    [badge, mobile].forEach((el) => {
+      if (!el) return;
+      el.classList.remove("pop");
+      void el.offsetWidth;
+      el.classList.add("pop");
+    });
+  }
+
+  function showToast(text) {
+    let host = document.querySelector("[data-toasts]");
+    if (!host) {
+      host = document.createElement("div");
+      host.className = "toasts";
+      host.setAttribute("data-toasts", "");
+      document.body.appendChild(host);
+    }
+    const el = document.createElement("div");
+    el.className = "toast";
+    el.textContent = text;
+    host.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("on"));
+    setTimeout(() => {
+      el.classList.remove("on");
+      el.classList.add("off");
+      setTimeout(() => el.remove(), 320);
+    }, 2000);
   }
 
   function onCartDelete(e) {
@@ -414,7 +447,7 @@
             <a href="#/">Inicio</a>
             <a href="#/catalogo">Catálogo</a>
             ${CATEGORIES.map((c) => `<a href="#/catalogo?categoria=${c.slug}">${c.label}</a>`).join("")}
-            <a href="#/carrito">Carrito ${cartCount() ? `(${cartCount()})` : ""}</a>
+            <a href="#/carrito" data-cart-count>Carrito (${cartCount()})</a>
             <a href="#/admin">Administrador</a>
           </nav>
         </header>
@@ -1268,12 +1301,16 @@
       }
       if (err) err.hidden = true;
       refreshCartUI();
+      popCartCount();
+      showToast("Producto añadido");
       openDrawer();
       form._paintStock?.();
       const btn = form.querySelector('button[type="submit"]');
       if (btn) {
+        btn.classList.add("flash");
         const prev = btn.textContent;
         btn.textContent = "Añadido";
+        setTimeout(() => btn.classList.remove("flash"), 300);
         setTimeout(() => {
           if (btn.textContent === "Añadido") btn.textContent = prev;
         }, 1400);

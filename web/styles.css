@@ -113,8 +113,14 @@ header.nav {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
   min-height: 2.75rem; padding: 0 1.1rem; border-radius: 0.625rem;
   border: 0; font-weight: 600; background: var(--primary); color: var(--primary-fg);
+  transition: background 0.3s ease-out, color 0.3s ease-out, filter 0.15s ease-out;
 }
 .btn:hover { filter: brightness(1.08); }
+.btn.flash {
+  background: #c6f25a;
+  color: #0b0c0a;
+  filter: none;
+}
 .btn.lg { min-height: 3rem; padding: 0 1.35rem; }
 .btn.outline {
   background: transparent; color: var(--fg);
@@ -321,6 +327,30 @@ footer.site-foot { border-top: 1px solid var(--border); background: var(--surfac
   border-radius: 999px; background: var(--primary); color: var(--primary-fg);
   font-size: 0.65rem; font-weight: 700; line-height: 1.1rem; text-align: center;
 }
+@keyframes cart-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+.cart-badge.pop, [data-cart-count].pop {
+  animation: cart-pop 0.35s ease-out;
+  display: inline-block;
+}
+.toasts {
+  position: fixed; top: 1rem; right: 1rem; z-index: 90;
+  display: grid; gap: 0.5rem; pointer-events: none;
+}
+.toast {
+  min-width: 12rem; padding: 0.7rem 1rem;
+  background: var(--elevated); color: var(--fg);
+  border: 1px solid var(--primary); border-radius: 0.6rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+  font-weight: 600; font-size: 0.92rem;
+  opacity: 0; transform: translateY(-8px);
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+.toast.on { opacity: 1; transform: none; }
+.toast.off { opacity: 0; transform: translateY(-6px); }
 .cart-overlay {
   position: fixed; inset: 0; z-index: 70;
   display: flex; justify-content: flex-end;
