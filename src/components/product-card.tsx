@@ -7,13 +7,13 @@ export function ProductCard({ product }: { product: Product }) {
     <Link
       to="/producto/$id"
       params={{ id: String(product.id) }}
-      className="group flex flex-col rounded-xl bg-surface p-2 shadow-[var(--shadow-border)] transition-[box-shadow,transform] duration-200 ease-out hover:shadow-[var(--shadow-border-hover)]"
+      className="group flex flex-col rounded-xl bg-surface p-2 shadow-[var(--shadow-border)] transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-[5px] hover:shadow-[0_14px_28px_rgba(0,0,0,0.32)]"
     >
       <ProductImage
         src={product.images[0]}
         alt={product.name}
         className="aspect-square rounded-lg"
-        imgClassName="transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+        imgClassName="transition-transform duration-300 ease-out group-hover:scale-105"
       />
       <div className="flex flex-1 flex-col gap-1.5 px-2 pt-3 pb-2">
         <p className="text-[0.65rem] tracking-[0.18em] text-subtle uppercase">

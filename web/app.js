@@ -447,7 +447,7 @@
   function card(p) {
     const img = p.images?.[0] || "";
     return `<a class="card" href="#/producto/${p.id}">
-      <img src="${img}" alt="${escapeHtml(p.name)}" />
+      <div class="card-photo"><img src="${img}" alt="${escapeHtml(p.name)}" /></div>
       <div class="card-body">
         <p class="subtle">${LABEL[p.category] || p.category}</p>
         <h3>${escapeHtml(p.name)}</h3>
