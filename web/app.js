@@ -249,7 +249,7 @@
   function drawerItemsHtml() {
     const items = loadCart();
     if (!items.length) {
-      return `<p class="muted" style="padding:0.75rem 0">Aún no hay prendas. Elige talla, color y cantidad en la ficha.</p>`;
+      return `<p class="drawer-empty">Aún no hay prendas. Elige talla, color y cantidad en la ficha.</p>`;
     }
     return items
       .map(
@@ -258,7 +258,7 @@
           <div>
             <p class="drawer-name">${escapeHtml(item.name)}</p>
             <p class="muted">${escapeHtml(item.size)} · ${escapeHtml(item.color)} · ×${item.qty}</p>
-            <p>${money(item.priceSoles * item.qty)}</p>
+            <p class="drawer-price">${money(item.priceSoles * item.qty)}</p>
           </div>
           <button class="icon-btn" type="button" data-cart-del="${escapeHtml(item.key)}" aria-label="Quitar">×</button>
         </div>`,
@@ -270,7 +270,7 @@
     const n = cartCount();
     if (!n) return "";
     return `
-      <p>Total <strong>${money(cartTotal())}</strong></p>
+      <p class="drawer-total">Total <strong>${money(cartTotal())}</strong></p>
       <a class="btn" href="#/carrito" data-cart-expand>Ver carrito completo</a>
       <a class="btn outline" href="#/comprar" data-cart-expand>Realizar compra</a>`;
   }
@@ -281,7 +281,10 @@
         <button class="cart-backdrop" type="button" data-cart-close aria-label="Cerrar carrito"></button>
         <aside class="cart-drawer" aria-label="Carrito">
           <div class="drawer-head">
-            <h2>Carrito</h2>
+            <div>
+              <p class="kicker">Pedido</p>
+              <h2>Carrito</h2>
+            </div>
             <button type="button" class="icon-btn" data-cart-close aria-label="Cerrar">×</button>
           </div>
           <div class="drawer-body" data-drawer-body>${drawerItemsHtml()}</div>
@@ -332,24 +335,53 @@
     });
   }
 
+  function playAddedSound() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!playAddedSound.ctx) playAddedSound.ctx = new Ctx();
+      const ctx = playAddedSound.ctx;
+      if (ctx.state === "suspended") ctx.resume();
+      const now = ctx.currentTime;
+      const tone = (freq, start, dur, vol) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "triangle";
+        o.frequency.setValueAtTime(freq, now + start);
+        g.gain.setValueAtTime(0.0001, now + start);
+        g.gain.exponentialRampToValueAtTime(vol, now + start + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start(now + start);
+        o.stop(now + start + dur + 0.03);
+      };
+      tone(392, 0, 0.11, 0.07);
+      tone(587.33, 0.09, 0.2, 0.08);
+    } catch (_) {}
+  }
+
+  function dismissToast(overlay) {
+    if (!overlay || overlay.classList.contains("off")) return;
+    overlay.classList.remove("on");
+    overlay.classList.add("off");
+    setTimeout(() => overlay.remove(), 280);
+  }
+
   function showToast(text) {
-    let host = document.querySelector("[data-toasts]");
-    if (!host) {
-      host = document.createElement("div");
-      host.className = "toasts";
-      host.setAttribute("data-toasts", "");
-      document.body.appendChild(host);
-    }
-    const el = document.createElement("div");
-    el.className = "toast";
-    el.textContent = text;
-    host.appendChild(el);
-    requestAnimationFrame(() => el.classList.add("on"));
-    setTimeout(() => {
-      el.classList.remove("on");
-      el.classList.add("off");
-      setTimeout(() => el.remove(), 320);
-    }, 2000);
+    document.querySelector("[data-toast-overlay]")?.remove();
+    const overlay = document.createElement("div");
+    overlay.className = "toast-overlay";
+    overlay.setAttribute("data-toast-overlay", "");
+    overlay.innerHTML = `<div class="toast-card" role="status">
+      <p class="kicker">Carrito</p>
+      <p class="toast-title">${escapeHtml(text)}</p>
+    </div>`;
+    overlay.addEventListener("click", () => dismissToast(overlay));
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("on"));
+    playAddedSound();
+    setTimeout(() => dismissToast(overlay), 2000);
   }
 
   function onCartDelete(e) {
