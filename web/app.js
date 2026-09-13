@@ -365,7 +365,7 @@
     if (!overlay || overlay.classList.contains("off")) return;
     overlay.classList.remove("on");
     overlay.classList.add("off");
-    setTimeout(() => overlay.remove(), 280);
+    setTimeout(() => overlay.remove(), 160);
   }
 
   function showToast(text) {
@@ -381,7 +381,7 @@
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add("on"));
     playAddedSound();
-    setTimeout(() => dismissToast(overlay), 2000);
+    setTimeout(() => dismissToast(overlay), 850);
   }
 
   function onCartDelete(e) {
@@ -484,7 +484,7 @@
           </nav>
         </header>
         ${cartOverlayHtml()}
-        <main>${content}</main>
+        <main class="page">${content}</main>
         <footer class="site-foot">
           <div class="wrap foot-grid">
             <div>
