@@ -11,6 +11,7 @@
     { slug: "chalecos", label: "Chalecos" },
     { slug: "mochilas", label: "Mochilas" },
     { slug: "abrigos", label: "Abrigos" },
+    { slug: "gorras", label: "Gorras" },
     { slug: "accesorios", label: "Accesorios" },
   ];
   const LABEL = Object.fromEntries(CATEGORIES.map((c) => [c.slug, c.label]));
@@ -552,7 +553,7 @@
         <div class="hero-inner">
           <p class="kicker">Equipo de servicio</p>
           <h1>Catálogo táctico</h1>
-          <p>Uniformes, calzado, chalecos y accesorios. Vista simple del catálogo; ficha completa al entrar en cada producto. Precios en soles.</p>
+          <p>Uniformes, calzado, chalecos, gorras y accesorios. Vista simple del catálogo; ficha completa al entrar en cada producto. Precios en soles.</p>
           <div class="hero-actions">
             <a class="btn lg" href="#/catalogo">Ver catálogo →</a>
             <a class="btn lg outline" href="#/catalogo?categoria=uniformes">Uniformes</a>
@@ -973,6 +974,58 @@
     return ("#" + to(f(5)) + to(f(3)) + to(f(1))).toUpperCase();
   }
 
+  const NAMED_COLORS = [
+    ["Negro", "#1A1A1A"],
+    ["Blanco", "#F4F1E8"],
+    ["Gris", "#6E7066"],
+    ["Olivo", "#4B5320"],
+    ["Verde bosque", "#2F3D24"],
+    ["Verde", "#3D6B3A"],
+    ["Coyote", "#9A7B4F"],
+    ["Khaki", "#A3926B"],
+    ["Arena", "#C2A878"],
+    ["Beige", "#D4C4A8"],
+    ["Marrón", "#6B4423"],
+    ["Tan", "#C2B280"],
+    ["Azul marino", "#1B2A4A"],
+    ["Azul", "#2E4A7A"],
+    ["Rojo", "#8B2E2E"],
+    ["Naranja", "#C45A1A"],
+    ["Amarillo", "#C9B037"],
+    ["Morado", "#5A3D6B"],
+    ["Selva", "#3D4A2F"],
+  ];
+
+  function hexRgb(hex) {
+    const h = normalizeHex(hex).slice(1);
+    return [
+      parseInt(h.slice(0, 2), 16),
+      parseInt(h.slice(2, 4), 16),
+      parseInt(h.slice(4, 6), 16),
+    ];
+  }
+
+  function autoColorName(hex) {
+    const [r, g, b] = hexRgb(hex);
+    let best = "Color";
+    let bestD = Infinity;
+    for (const [name, sample] of NAMED_COLORS) {
+      const [sr, sg, sb] = hexRgb(sample);
+      const d = (r - sr) ** 2 + (g - sg) ** 2 + (b - sb) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = name;
+      }
+    }
+    return best;
+  }
+
+  function shouldAutoName(current, oldHex) {
+    const n = String(current || "").trim();
+    if (!n || n === "Color") return true;
+    return Boolean(oldHex) && n === autoColorName(oldHex);
+  }
+
   function colorRowHtml(name, hex, stock) {
     const safe = normalizeHex(hex);
     const n = Math.max(0, Number(stock) || 0);
@@ -1081,6 +1134,11 @@
       const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
       const chip = activeRow.querySelector("[data-open-picker]");
       const hidden = activeRow.querySelector("[data-color-hex]");
+      const nameEl = activeRow.querySelector("[data-color-name]");
+      const oldHex = hidden?.value;
+      if (nameEl && shouldAutoName(nameEl.value, oldHex)) {
+        nameEl.value = autoColorName(hex);
+      }
       if (chip) chip.style.background = hex;
       if (hidden) hidden.value = hex;
       if (hexEl) hexEl.value = hex;
@@ -1137,7 +1195,7 @@
       const sizeBlock = e.target.closest("[data-inv-size]");
       if (e.target.closest("[data-add-inv-color]") && sizeBlock) {
         const list = sizeBlock.querySelector("[data-color-list]");
-        list.insertAdjacentHTML("beforeend", colorRowHtml("Color", "#8A9A6A", 0));
+        list.insertAdjacentHTML("beforeend", colorRowHtml(autoColorName("#8A9A6A"), "#8A9A6A", 0));
         openFor(list.querySelector(".color-row:last-child"));
         return;
       }

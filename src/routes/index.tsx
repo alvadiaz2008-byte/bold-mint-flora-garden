@@ -34,7 +34,7 @@ function Home() {
             Catálogo táctico
           </h1>
           <p className="mt-3 max-w-lg text-base text-muted md:text-lg">
-            Uniformes, calzado, chalecos y accesorios. Vista simple del
+            Uniformes, calzado, chalecos, gorras y accesorios. Vista simple del
             catálogo; ficha completa al entrar en cada producto. Precios en
             soles.
           </p>

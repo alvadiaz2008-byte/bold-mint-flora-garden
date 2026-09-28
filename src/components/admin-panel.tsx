@@ -16,6 +16,7 @@ import {
 import {
   CATEGORIES,
   formatSoles,
+  autoColorName,
   sizesForCategory,
   type Product,
   type ProductColor,
@@ -324,8 +325,17 @@ export function AdminPanel({ products }: { products: Product[] }) {
                   type="color"
                   value={c.hex}
                   onChange={(e) => {
+                    const hex = e.target.value;
                     const colors = [...form.colors];
-                    colors[i] = { ...c, hex: e.target.value };
+                    const generic =
+                      !c.name.trim() ||
+                      c.name === "Color" ||
+                      c.name === autoColorName(c.hex);
+                    colors[i] = {
+                      ...c,
+                      hex,
+                      name: generic ? autoColorName(hex) : c.name,
+                    };
                     patch({ colors });
                   }}
                   className="h-11 w-14 cursor-pointer rounded-md bg-elevated p-1"
@@ -349,7 +359,15 @@ export function AdminPanel({ products }: { products: Product[] }) {
                     try {
                       const { sRGBHex } = await new Eye().open();
                       const colors = [...form.colors];
-                      colors[i] = { ...c, hex: sRGBHex };
+                      const generic =
+                        !c.name.trim() ||
+                        c.name === "Color" ||
+                        c.name === autoColorName(c.hex);
+                      colors[i] = {
+                        ...c,
+                        hex: sRGBHex,
+                        name: generic ? autoColorName(sRGBHex) : c.name,
+                      };
                       patch({ colors });
                     } catch {
                       /* cancelado */
@@ -381,7 +399,7 @@ export function AdminPanel({ products }: { products: Product[] }) {
             className="mt-3"
             onClick={() =>
               patch({
-                colors: [...form.colors, { name: "", hex: "#1A1A1A" } as ProductColor],
+                colors: [...form.colors, { name: autoColorName("#1A1A1A"), hex: "#1A1A1A" } as ProductColor],
               })
             }
           >
