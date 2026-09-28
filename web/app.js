@@ -897,7 +897,19 @@
               </div>
             </div>
           </div>
-          <div class="field"><label>URL de imagen</label><input name="image" placeholder="https://…" /></div>
+          <div class="field">
+            <label>Fotos del producto</label>
+            <p class="hint">Puedes añadir hasta 5. Pega el enlace y verás la vista previa antes de confirmar.</p>
+            <div class="img-list" data-img-list></div>
+            <div class="img-add">
+              <input type="url" data-img-url placeholder="https://… o imagenes/foto.jpg" />
+              <button class="btn outline" type="button" data-img-add>Añadir foto</button>
+            </div>
+            <div class="img-live" data-img-live hidden>
+              <img alt="Vista previa" />
+              <p class="hint">Vista previa</p>
+            </div>
+          </div>
           <div class="field"><label>Descripción</label><textarea name="description" required minlength="20"></textarea></div>
           <div class="field"><label>Material</label><input name="material" /></div>
           <button class="btn" type="submit">Guardar</button>
@@ -1259,6 +1271,75 @@
     });
   }
 
+  function imgRowHtml(src) {
+    return `<div class="img-row">
+      <img src="${escapeHtml(src)}" alt="" />
+      <input type="hidden" data-img-src value="${escapeHtml(src)}" />
+      <span class="muted" style="word-break:break-all;font-size:0.8rem">${escapeHtml(src)}</span>
+      <button type="button" class="btn outline" data-img-del>Quitar</button>
+    </div>`;
+  }
+
+  function readAdminImages() {
+    return [...document.querySelectorAll("[data-img-src]")]
+      .map((el) => el.value.trim())
+      .filter(Boolean);
+  }
+
+  function setAdminImages(urls) {
+    const list = document.querySelector("[data-img-list]");
+    if (!list) return;
+    list.innerHTML = (urls || []).map(imgRowHtml).join("");
+  }
+
+  function bindImageFields() {
+    const input = document.querySelector("[data-img-url]");
+    const live = document.querySelector("[data-img-live]");
+    const liveImg = live?.querySelector("img");
+    const list = document.querySelector("[data-img-list]");
+    if (!input || !list) return;
+
+    function preview(url) {
+      if (!live || !liveImg) return;
+      if (!url) {
+        live.hidden = true;
+        live.classList.remove("broke");
+        liveImg.removeAttribute("src");
+        return;
+      }
+      live.hidden = false;
+      live.classList.remove("broke");
+      liveImg.src = url;
+    }
+
+    input.addEventListener("input", () => preview(input.value.trim()));
+    liveImg?.addEventListener("error", () => live?.classList.add("broke"));
+    liveImg?.addEventListener("load", () => live?.classList.remove("broke"));
+
+    function addUrl() {
+      const url = input.value.trim();
+      if (!url) return;
+      if (readAdminImages().length >= 5) {
+        window.alert("Máximo 5 fotos por prenda.");
+        return;
+      }
+      list.insertAdjacentHTML("beforeend", imgRowHtml(url));
+      input.value = "";
+      preview("");
+    }
+
+    document.querySelector("[data-img-add]")?.addEventListener("click", addUrl);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addUrl();
+      }
+    });
+    list.addEventListener("click", (e) => {
+      if (e.target.closest("[data-img-del]")) e.target.closest(".img-row")?.remove();
+    });
+  }
+
   function bindVariantPicker() {
     const form = document.querySelector("[data-add-cart]");
     if (!form) return;
@@ -1526,6 +1607,7 @@
     });
 
     bindColorPicker();
+    bindImageFields();
 
     document.querySelector("[data-login]")?.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -1548,6 +1630,8 @@
       form?.reset();
       form.querySelector('[name="id"]').value = "";
       setInventory();
+      setAdminImages([]);
+      document.querySelector("[data-img-live]")?.setAttribute("hidden", "");
       const title = $("#form-title");
       if (title) title.textContent = "Nueva prenda";
       document.querySelector("[data-picker]")?.setAttribute("hidden", "");
@@ -1576,7 +1660,12 @@
         sizes,
         colors: [...colorMap.values()],
         stock: variants.reduce((n, v) => n + Number(v.stock || 0), 0),
-        images: fd.image ? [String(fd.image).trim()] : ["https://images.unsplash.com/photo-1548449112-96a38a64381d?auto=format&fit=crop&w=900&q=80"],
+        images: (() => {
+          const imgs = readAdminImages();
+          return imgs.length
+            ? imgs
+            : ["https://images.unsplash.com/photo-1548449112-96a38a64381d?auto=format&fit=crop&w=900&q=80"];
+        })(),
         material: String(fd.material || "").trim(),
         weightG: null,
         features: [],
@@ -1595,7 +1684,7 @@
         form.category.value = p.category;
         form.priceSoles.value = p.priceSoles;
         setInventory(inventoryFromProduct(p));
-        form.image.value = p.images?.[0] || "";
+        setAdminImages(p.images || []);
         form.description.value = p.description;
         form.material.value = p.material || "";
         form.id.value = p.id;

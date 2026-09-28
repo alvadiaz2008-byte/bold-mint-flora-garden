@@ -454,6 +454,18 @@ export function AdminPanel({ products }: { products: Product[] }) {
               Añadir
             </Button>
           </div>
+          {imageUrl.trim() ? (
+            <div className="mt-2 overflow-hidden rounded-md bg-elevated p-2">
+              <p className="mb-1 text-[0.65rem] tracking-[0.18em] text-subtle uppercase">
+                Vista previa
+              </p>
+              <ProductImage
+                src={imageUrl.trim()}
+                alt="Vista previa"
+                className="max-h-52 w-full rounded-md"
+              />
+            </div>
+          ) : null}
         </fieldset>
 
         <Field label="Características (una por línea)" className="mt-6">
