@@ -18,7 +18,8 @@ export function ProductDetail({
   related: Product[];
 }) {
   const [imageIndex, setImageIndex] = useState(0);
-  const [size, setSize] = useState(product.sizes[0] ?? "");
+  const visibleSizes = product.sizes.filter((s) => s && s !== "Sin talla");
+  const [size, setSize] = useState(visibleSizes[0] ?? "");
   const [color, setColor] = useState(product.colors[0]?.name ?? "");
   const selectedColor = useMemo(
     () => product.colors.find((c) => c.name === color) ?? product.colors[0],
@@ -69,7 +70,7 @@ export function ProductDetail({
           <ProductImage
             src={main}
             alt={product.name}
-            className="aspect-square w-full rounded-xl"
+            className="max-h-[70vh] w-full rounded-xl bg-elevated"
           />
         </div>
 
@@ -113,13 +114,13 @@ export function ProductDetail({
             </fieldset>
           ) : null}
 
-          {product.sizes.length > 0 ? (
+          {visibleSizes.length > 0 ? (
             <fieldset className="mt-6">
               <legend className="text-xs font-medium tracking-[0.18em] text-subtle uppercase">
                 Talla: {size}
               </legend>
               <div className="mt-3 flex flex-wrap gap-2">
-                {product.sizes.map((s) => {
+                {visibleSizes.map((s) => {
                   const active = s === size;
                   return (
                     <button

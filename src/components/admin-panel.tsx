@@ -278,6 +278,9 @@ export function AdminPanel({ products }: { products: Product[] }) {
           <legend className="text-xs font-medium tracking-wide text-muted uppercase">
             Tallas
           </legend>
+          <p className="mt-2 text-xs text-muted">
+            Si el producto no usa talla, deja todas sin marcar.
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {sizeOptions.map((s) => {
               const on = form.sizes.includes(s);

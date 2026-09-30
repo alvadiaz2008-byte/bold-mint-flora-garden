@@ -106,7 +106,13 @@
 
   function productSizes(p) {
     const fromV = [...new Set((p.variants || []).map((v) => v.size))];
-    return fromV.length ? fromV : p.sizes || [];
+    const list = (fromV.length ? fromV : p.sizes || []).filter((s) => s && s !== "Sin talla");
+    return list;
+  }
+
+  function variantNote(size, color) {
+    if (!size || size === "Sin talla") return color || "";
+    return size + " · " + color;
   }
 
   function productColors(p, size) {
@@ -195,16 +201,19 @@
   function addToCart({ productId, size, color, qty }) {
     const p = byId(productId);
     if (!p) return "Producto no encontrado.";
-    if (!size || !color) return "Elige talla y color.";
-    const have = variantStock(p, size, color);
-    if (have <= 0) return `Agotado en talla ${size} / ${color}.`;
+    if (!color) return "Elige un color.";
+    const sized = productSizes(p).length > 0;
+    if (sized && !size) return "Elige talla.";
+    const sizeKey = sized ? size : size || "Sin talla";
+    const have = variantStock(p, sizeKey, color);
+    if (have <= 0) return `Agotado${sized ? " en talla " + sizeKey : ""} / ${color}.`;
     const n = Math.max(1, Number(qty) || 1);
-    const key = `${p.id}|${size}|${color}`;
+    const key = `${p.id}|${sizeKey}|${color}`;
     const cart = loadCart();
     const existing = cart.find((i) => i.key === key);
     const nextQty = (existing ? existing.qty : 0) + n;
     if (nextQty > have) {
-      return `Solo hay ${have} unidades en talla ${size}, color ${color}.`;
+      return `Solo hay ${have} unidades${sized ? " en talla " + sizeKey + "," : ""} color ${color}.`;
     }
     if (existing) existing.qty = nextQty;
     else {
@@ -214,7 +223,7 @@
         name: p.name,
         image: p.images[0] || "",
         priceSoles: p.priceSoles,
-        size,
+        size: sizeKey,
         color,
         qty: n,
       });
@@ -258,7 +267,7 @@
           <img src="${item.image}" alt="" />
           <div>
             <p class="drawer-name">${escapeHtml(item.name)}</p>
-            <p class="muted">${escapeHtml(item.size)} · ${escapeHtml(item.color)} · ×${item.qty}</p>
+            <p class="muted">${escapeHtml(variantNote(item.size, item.color))} · ×${item.qty}</p>
             <p class="drawer-price">${money(item.priceSoles * item.qty)}</p>
           </div>
           <button class="icon-btn" type="button" data-cart-del="${escapeHtml(item.key)}" aria-label="Quitar">×</button>
@@ -611,7 +620,7 @@
       .filter((x) => x.category === p.category && x.id !== p.id)
       .slice(0, 4);
     const sizes = productSizes(p);
-    const size0 = sizes[0] || "";
+    const size0 = sizes[0] || "Sin talla";
     const colors = productColors(p, size0);
     const color0 = colors[0]?.name || "";
     const available = variantStock(p, size0, color0);
@@ -747,7 +756,7 @@
                 <img src="${item.image}" alt="" />
                 <div>
                   <h3><a href="#/producto/${item.productId}">${escapeHtml(item.name)}</a></h3>
-                  <p class="muted">Talla ${escapeHtml(item.size)} · ${escapeHtml(item.color)}</p>
+                  <p class="muted">${escapeHtml(variantNote(item.size, item.color))}</p>
                   <p class="muted">${money(item.priceSoles)} c/u</p>
                   ${item.missing ? `<p class="error">Esta prenda ya no está en el catálogo.</p>` : ""}
                 </div>
@@ -786,7 +795,7 @@
           ${items
             .map(
               (i) =>
-                `<p style="padding:0.35rem 0">${escapeHtml(i.qty + " × " + i.name)} <span class="muted">(${escapeHtml(i.size)} · ${escapeHtml(i.color)})</span> — ${money(i.priceSoles * i.qty)}</p>`,
+                `<p style="padding:0.35rem 0">${escapeHtml(i.qty + " × " + i.name)} <span class="muted">(${escapeHtml(variantNote(i.size, i.color))})</span> — ${money(i.priceSoles * i.qty)}</p>`,
             )
             .join("")}
           <p style="margin-top:0.6rem"><strong>Total ${money(cartTotal())}</strong></p>
@@ -871,7 +880,7 @@
           </div>
           <div class="field">
             <label>Tallas, colores y stock</label>
-            <p class="hint">Añade una talla, luego sus colores y la cantidad de cada uno. Repite con las demás tallas.</p>
+            <p class="hint">Añade una talla, luego sus colores y la cantidad de cada uno. Si el producto no usa talla, pulsa Quitar talla.</p>
             <div data-inv>
               ${invSizeHtml("S", [
                 { name: "Olivo", hex: "#4B5320", stock: 10 },
@@ -1050,28 +1059,31 @@
     </div>`;
   }
 
-  function invSizeHtml(size, colors) {
+  function invSizeHtml(size, colors, noSize) {
     const rows =
       colors && colors.length
         ? colors
         : [{ name: "Olivo", hex: "#4B5320", stock: 0 }];
-    return `<div class="inv-size" data-inv-size>
+    const none = Boolean(noSize || size === "Sin talla");
+    return `<div class="inv-size" data-inv-size ${none ? "data-no-size" : ""}>
       <div class="inv-size-head">
-        <input data-inv-size-name value="${escapeHtml(size || "")}" placeholder="Talla (S, M, 42…)" maxlength="12" />
-        <button type="button" class="btn outline" data-remove-size>Quitar talla</button>
+        <input data-inv-size-name value="${escapeHtml(none ? "Sin talla" : size || "")}" placeholder="Talla (S, M, 42…)" maxlength="12" ${none ? "readonly" : ""} />
+        <button type="button" class="btn outline" data-remove-size ${none ? "hidden" : ""}>Quitar talla</button>
       </div>
-      <p class="hint">Colores y unidades de esta talla</p>
+      <p class="hint">${none ? "Producto sin talla. Colores y unidades." : "Colores y unidades de esta talla"}</p>
       <div class="color-list" data-color-list>
         ${rows.map((c) => colorRowHtml(c.name, c.hex, c.stock)).join("")}
       </div>
-      <button type="button" class="btn outline" data-add-inv-color>Añadir color a esta talla</button>
+      <button type="button" class="btn outline" data-add-inv-color>Añadir color${none ? "" : " a esta talla"}</button>
     </div>`;
   }
 
   function readAdminInventory() {
     return [...document.querySelectorAll("[data-inv-size]")]
       .map((block) => {
-        const size = block.querySelector("[data-inv-size-name]")?.value.trim() || "";
+        const size = block.hasAttribute("data-no-size")
+          ? "Sin talla"
+          : block.querySelector("[data-inv-size-name]")?.value.trim() || "";
         const colors = [...block.querySelectorAll(".color-row")].map((row) => ({
           name: row.querySelector("[data-color-name]")?.value.trim() || "Color",
           hex: normalizeHex(row.querySelector("[data-color-hex]")?.value),
@@ -1096,7 +1108,13 @@
             ],
           },
         ];
-    inv.innerHTML = list.map((g) => invSizeHtml(g.size, g.colors)).join("");
+    const real = list.filter((g) => g.size && g.size !== "Sin talla");
+    const none = list.filter((g) => !g.size || g.size === "Sin talla");
+    if (!real.length) {
+      inv.innerHTML = invSizeHtml("Sin talla", none[0]?.colors || list[0].colors, true);
+      return;
+    }
+    inv.innerHTML = real.map((g) => invSizeHtml(g.size, g.colors, false)).join("");
   }
 
   function variantsFromInventory(inv) {
@@ -1213,7 +1231,18 @@
       }
       if (e.target.closest("[data-remove-size]") && sizeBlock) {
         const wrap = document.querySelector("[data-inv]");
-        if (wrap && wrap.querySelectorAll("[data-inv-size]").length > 1) sizeBlock.remove();
+        if (!wrap) return;
+        const blocks = wrap.querySelectorAll("[data-inv-size]");
+        if (blocks.length > 1) {
+          sizeBlock.remove();
+          return;
+        }
+        const colors = [...sizeBlock.querySelectorAll(".color-row")].map((row) => ({
+          name: row.querySelector("[data-color-name]")?.value.trim() || "Olivo",
+          hex: row.querySelector("[data-color-hex]")?.value || "#4B5320",
+          stock: Number(row.querySelector("[data-inv-stock]")?.value) || 0,
+        }));
+        wrap.innerHTML = invSizeHtml("Sin talla", colors, true);
         return;
       }
       const row = e.target.closest(".color-row");
@@ -1232,9 +1261,24 @@
     document.querySelector("[data-add-size]")?.addEventListener("click", () => {
       const wrap = document.querySelector("[data-inv]");
       if (!wrap) return;
+      const nosize = wrap.querySelector("[data-no-size]");
+      if (nosize) {
+        nosize.removeAttribute("data-no-size");
+        const name = nosize.querySelector("[data-inv-size-name]");
+        if (name) {
+          name.value = "";
+          name.removeAttribute("readonly");
+          name.focus();
+        }
+        const rm = nosize.querySelector("[data-remove-size]");
+        if (rm) rm.hidden = false;
+        const hint = nosize.querySelector(".hint");
+        if (hint) hint.textContent = "Colores y unidades de esta talla";
+        return;
+      }
       wrap.insertAdjacentHTML(
         "beforeend",
-        invSizeHtml("", [{ name: "Olivo", hex: "#4B5320", stock: 0 }]),
+        invSizeHtml("", [{ name: autoColorName("#8A9A6A"), hex: "#8A9A6A", stock: 0 }]),
       );
       wrap.querySelector("[data-inv-size]:last-child [data-inv-size-name]")?.focus();
     });
@@ -1521,7 +1565,7 @@
           return;
         }
         if (item.qty > variantStock(p, item.size, item.color)) {
-          showError(`No hay stock suficiente de ${p.name} (${item.size} / ${item.color}).`);
+          showError(`No hay stock suficiente de ${p.name} (${variantNote(item.size, item.color)}).`);
           return;
         }
       }
@@ -1540,7 +1584,7 @@
       const rows = [
         ...items.map((i) => [
           `${i.qty} × ${i.name}`,
-          `${i.size} · ${i.color} · ${money(i.priceSoles * i.qty)}`,
+          `${variantNote(i.size, i.color)} · ${money(i.priceSoles * i.qty)}`,
         ]),
         ["Total", total],
         ["Nombre", name],
@@ -1583,7 +1627,7 @@
         clearCart();
         const lines = items.map(
           (i) =>
-            `• ${i.qty} × ${i.name} (${i.size}, ${i.color}) — ${money(i.priceSoles * i.qty)}`,
+            `• ${i.qty} × ${i.name} (${variantNote(i.size, i.color)}) — ${money(i.priceSoles * i.qty)}`,
         );
         const msg = [
           "Pedido ATLAS TÁCTICO",
@@ -1642,11 +1686,11 @@
       const fd = Object.fromEntries(new FormData(form).entries());
       const inv = readAdminInventory();
       if (!inv.length) {
-        window.alert("Añade al menos una talla con un color y su cantidad.");
+        window.alert("Añade al menos un color con su cantidad.");
         return;
       }
       const variants = variantsFromInventory(inv);
-      const sizes = [...new Set(inv.map((g) => g.size))];
+      const sizes = [...new Set(inv.map((g) => g.size))].filter((s) => s && s !== "Sin talla");
       const colorMap = new Map();
       for (const v of variants) {
         if (!colorMap.has(v.color)) colorMap.set(v.color, { name: v.color, hex: v.hex });

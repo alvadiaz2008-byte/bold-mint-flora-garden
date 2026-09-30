@@ -27,7 +27,7 @@ const productInputSchema = z.object({
   description: z.string().trim().min(20).max(4000),
   category: z.enum(categorySlugs),
   priceSoles: z.number().positive().max(99999),
-  sizes: z.array(z.string().trim().min(1).max(12)).min(1).max(16),
+  sizes: z.array(z.string().trim().min(1).max(12)).max(16),
   colors: z.array(colorSchema).min(1).max(12),
   images: z.array(z.string().trim().min(1).max(700_000)).min(1).max(5),
   material: z.string().trim().min(2).max(160),

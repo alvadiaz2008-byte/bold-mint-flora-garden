@@ -12,7 +12,7 @@ export function ProductCard({ product }: { product: Product }) {
       <ProductImage
         src={product.images[0]}
         alt={product.name}
-        className="aspect-square rounded-lg"
+        className="flex min-h-44 items-center justify-center rounded-lg bg-elevated"
         imgClassName="transition-transform duration-300 ease-out group-hover:scale-105"
       />
       <div className="flex flex-1 flex-col gap-1.5 px-2 pt-3 pb-2">

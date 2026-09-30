@@ -34,7 +34,7 @@ export function ProductImage({
         alt={alt}
         onError={() => setFailed(true)}
         className={cn(
-          "size-full object-cover saturate-[0.88] contrast-[1.04]",
+          "max-h-full max-w-full w-auto h-auto object-contain saturate-[0.88] contrast-[1.04]",
           imgClassName,
         )}
       />
