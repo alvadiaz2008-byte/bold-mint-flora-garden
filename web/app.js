@@ -2,6 +2,32 @@
   const STORE_KEY = "atlas-tactico-store-v1";
   const app = document.querySelector("#app");
 
+  const style = document.createElement("style");
+  style.textContent = `
+.hero-bg {
+  background: url("public/logo.png") center/contain no-repeat !important;
+  background-color: #141611 !important;
+  opacity: 0.22 !important;
+}
+.hero { min-height: 12rem; }
+@media (min-width: 768px) { .hero { min-height: 16rem; } }
+.cat-card {
+  min-height: 3.25rem !important;
+  justify-content: center !important;
+  padding: 0.55rem 0.85rem !important;
+  border-radius: 0.7rem !important;
+}
+.cat-card span { font-size: 1rem !important; }
+.logo-img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+`;
+  document.head.appendChild(style);
+
   function applyLogo() {
     document.querySelectorAll("a.logo").forEach((el) => {
       if (el.querySelector("img.logo-img")) return;
