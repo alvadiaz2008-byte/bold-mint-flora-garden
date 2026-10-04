@@ -32,12 +32,12 @@
 
   function applyLogo() {
     document.querySelectorAll("a.logo").forEach((el) => {
-      el.setAttribute("aria-label", "L.E.A.D BAZAR MILITAR — inicio");
+      el.setAttribute("aria-label", "LEAD BAZAR MILITAR — inicio");
       if (!el.querySelector("img.logo-img")) {
         const svg = el.querySelector("svg");
         const img = document.createElement("img");
         img.src = "public/logo.png";
-        img.alt = "L.E.A.D BAZAR MILITAR";
+        img.alt = "LEAD BAZAR MILITAR";
         img.className = "logo-img";
         img.width = 36;
         img.height = 36;
@@ -48,7 +48,7 @@
       if (name) {
         const strong = name.querySelector("strong");
         const span = name.querySelector("span");
-        if (strong) strong.textContent = "L.E.A.D";
+        if (strong) strong.textContent = "LEAD";
         if (span) span.textContent = "BAZAR MILITAR";
       }
     });
@@ -83,7 +83,7 @@
 
   if (app) {
     app.innerHTML =
-      '<div class="wrap" style="padding:3rem 1rem;color:#ecebe3"><p>L.E.A.D BAZAR MILITAR</p><h1>Cargando catálogo…</h1></div>';
+      '<div class="wrap" style="padding:3rem 1rem;color:#ecebe3"><p>LEAD BAZAR MILITAR</p><h1>Cargando catálogo…</h1></div>';
   }
   boot();
 })();
