@@ -109,20 +109,17 @@
   {
     "id": 4,
     "sku": "ATL-CHA-001",
-    "name": "Chaleco táctico MOLLE",
-    "description": "Chaleco portaplacas ligero con trama MOLLE en pecho, espalda y costados.",
+    "name": "RH",
+    "description": "Diseñado para ofrecer máxima libertad de movimiento y un acceso rápido a tu equipamiento. Su perfil ligero y ergonómico distribuye la carga de forma equilibrada, convirtiéndolo en la opción ideal para configuraciones de alta agilidad donde la ventilación y la respuesta inmediata son fundamentales.",
     "category": "chalecos",
     "priceSoles": 279,
     "stock": 10,
-    "sizes": ["S", "M", "L", "XL", "XXL"],
+    "sizes": ["Sin talla"],
     "colors": [
-      { "name": "Negro", "hex": "#1A1A1A" },
-      { "name": "Olivo", "hex": "#4B5320" },
-      { "name": "Coyote", "hex": "#9A7B4F" }
+      { "name": "Olivo", "hex": "#4B5320" }
     ],
     "images": [
-      "https://images.unsplash.com/photo-1544022613-e87caecea06c?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&w=900&q=80"
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/RH%2001.jpeg"
     ],
     "material": "Nylon 500D con malla 3D",
     "weightG": 890,
@@ -134,21 +131,7 @@
     },
     "featured": true,
     "variants": [
-      { "size": "S", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "S", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "S", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
-      { "size": "M", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "M", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "M", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
-      { "size": "L", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "L", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "L", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
-      { "size": "XL", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "XL", "color": "Olivo", "hex": "#4B5320", "stock": 0 },
-      { "size": "XL", "color": "Coyote", "hex": "#9A7B4F", "stock": 0 },
-      { "size": "XXL", "color": "Negro", "hex": "#1A1A1A", "stock": 0 },
-      { "size": "XXL", "color": "Olivo", "hex": "#4B5320", "stock": 0 },
-      { "size": "XXL", "color": "Coyote", "hex": "#9A7B4F", "stock": 0 }
+      { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 41 }
     ]
   },
   {
