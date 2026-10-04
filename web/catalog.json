@@ -25,7 +25,7 @@
       "Corte": "Atlético",
       "Cuidado": "Lavado a 30 °C"
     },
-    "featured": false,
+    "featured": true,
     "variants": [
       { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 20 },
       { "size": "Sin talla", "color": "Negro", "hex": "#141414", "stock": 22 },
