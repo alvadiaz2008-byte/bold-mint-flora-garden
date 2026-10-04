@@ -2,7 +2,7 @@
   {
     "id": 1,
     "sku": "ATL-UNI-001",
-    "name": "Camiseta táctica Dry-Fit",
+    "name": "GATO",
     "description": "Camiseta de servicio en tejido Dry-Fit de secado rápido. Corte atlético que no estorba bajo chaleco o placa. Costuras planas en hombros y costados para reducir rozaduras en jornadas largas. Cuello redondo reforzado que no se deforma con el lavado.",
     "category": "uniformes",
     "priceSoles": 89,
@@ -27,7 +27,7 @@
     },
     "featured": true,
     "variants": [
-      { "size": "S", "color": "Olivo", "hex": "#4B5320", "stock": 2 },
+      { "size": "S", "color": "Olivo", "hex": "#4B5320", "stock": 10 },
       { "size": "S", "color": "Negro", "hex": "#1A1A1A", "stock": 2 },
       { "size": "S", "color": "Coyote", "hex": "#9A7B4F", "stock": 2 },
       { "size": "M", "color": "Olivo", "hex": "#4B5320", "stock": 2 },
