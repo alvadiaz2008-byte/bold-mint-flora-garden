@@ -7,7 +7,7 @@
     "category": "mochilas",
     "priceSoles": 120,
     "stock": 24,
-    "sizes": ["Sin talla"],
+    "sizes": ["Unica"],
     "colors": [
       { "name": "Olivo", "hex": "#4B5320" },
       { "name": "Negro", "hex": "#141414" },
