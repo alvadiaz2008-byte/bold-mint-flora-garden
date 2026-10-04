@@ -30,6 +30,20 @@
 }
 .logo-name strong { letter-spacing: 0.12em; }
 .logo-name span { letter-spacing: 0.14em; }
+/* Catálogo: miniatura cuadrada (no afecta ficha de producto) */
+.card-photo {
+  aspect-ratio: 1 / 1 !important;
+  min-height: 0 !important;
+  width: 100%;
+  overflow: hidden;
+}
+.card-photo img {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  object-position: center !important;
+}
 `;
   document.head.appendChild(style);
 
