@@ -7,7 +7,7 @@
     "category": "mochilas",
     "priceSoles": 120,
     "stock": 24,
-    "sizes": ["Unica"],
+    "sizes": ["Sin talla"],
     "colors": [
       { "name": "Olivo", "hex": "#4B5320" },
       { "name": "Negro", "hex": "#141414" },
@@ -30,7 +30,7 @@
       { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 20 },
       { "size": "Sin talla", "color": "Negro", "hex": "#141414", "stock": 22 },
       { "size": "Sin talla", "color": "Coyote", "hex": "#9A7B4F", "stock": 21 },
-      { "size": "Sin Talla", "color": "Camuflaje", "hex": "#B3C297", "stock": 42 }
+      { "size": "Sin talla", "color": "Camuflaje", "hex": "#B3C297", "stock": 42 }
     ]
   },
   {
