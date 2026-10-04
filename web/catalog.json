@@ -10,7 +10,7 @@
     "sizes": ["Sin talla"],
     "colors": [
       { "name": "Olivo", "hex": "#4B5320" },
-      { "name": "Negro", "hex": "#1A1A1A" },
+      { "name": "Negro", "hex": "#141414" },
       { "name": "Coyote", "hex": "#9A7B4F" },
       { "name": "Camuflaje", "hex": "#B3C297" }
     ],
