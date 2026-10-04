@@ -1,4 +1,2 @@
-// Fuente editable principal: web/catalog.json
-// Este archivo se sincroniza con catalog.json para que el catálogo funcione.
-// Edita catalog.json y pide sincronizar, o copia su contenido aquí.
+// Sincronizado con web/catalog.json — edita catalog.json (fuente principal).
 window.SEED_PRODUCTS = [];
