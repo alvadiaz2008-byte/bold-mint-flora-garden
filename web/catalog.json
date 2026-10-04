@@ -27,7 +27,7 @@
     },
     "featured": true,
     "variants": [
-      { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 10 },
+      { "size": "S", "color": "Olivo", "hex": "#4B5320", "stock": 10 },
       { "size": "S", "color": "Negro", "hex": "#1A1A1A", "stock": 2 },
       { "size": "S", "color": "Coyote", "hex": "#9A7B4F", "stock": 2 },
       { "size": "M", "color": "Olivo", "hex": "#4B5320", "stock": 2 },
