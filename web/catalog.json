@@ -2,20 +2,20 @@
   {
     "id": 1,
     "sku": "ATL-UNI-001",
-    "name": "GATO",
-    "description": "Camiseta de servicio en tejido Dry-Fit de secado rápido. Corte atlético que no estorba bajo chaleco o placa. Costuras planas en hombros y costados para reducir rozaduras en jornadas largas. Cuello redondo reforzado que no se deforma con el lavado.",
-    "category": "uniformes",
-    "priceSoles": 89,
+    "name": "Mochila 50 Litros",
+    "description": "La combinación ideal entre resistencia extrema, capacidad de organización y confort ergonómico. Diseñada para adaptarse a cualquier desafío, desde expediciones al aire libre hasta la rutina urbana diaria.",
+    "category": "mochilas",
+    "priceSoles": 120,
     "stock": 24,
-    "sizes": ["S", "M", "L", "XL", "XXL"],
+    "sizes": ["Sin talla"],
     "colors": [
       { "name": "Olivo", "hex": "#4B5320" },
       { "name": "Negro", "hex": "#1A1A1A" },
-      { "name": "Coyote", "hex": "#9A7B4F" }
+      { "name": "Coyote", "hex": "#9A7B4F" },
+      { "name": "Camuflaje", "hex": "#B3C297" }
     ],
     "images": [
-      "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80"
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Mochila%2050L%2001.jpeg"
     ],
     "material": "Poliéster Dry-Fit 160 g/m²",
     "weightG": 180,
@@ -27,21 +27,10 @@
     },
     "featured": true,
     "variants": [
-      { "size": "S", "color": "Olivo", "hex": "#4B5320", "stock": 10 },
-      { "size": "S", "color": "Negro", "hex": "#1A1A1A", "stock": 2 },
-      { "size": "S", "color": "Coyote", "hex": "#9A7B4F", "stock": 2 },
-      { "size": "M", "color": "Olivo", "hex": "#4B5320", "stock": 2 },
-      { "size": "M", "color": "Negro", "hex": "#1A1A1A", "stock": 2 },
-      { "size": "M", "color": "Coyote", "hex": "#9A7B4F", "stock": 2 },
-      { "size": "L", "color": "Olivo", "hex": "#4B5320", "stock": 2 },
-      { "size": "L", "color": "Negro", "hex": "#1A1A1A", "stock": 2 },
-      { "size": "L", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
-      { "size": "XL", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "XL", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "XL", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
-      { "size": "XXL", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "XXL", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "XXL", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 }
+      { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 20 },
+      { "size": "Sin talla", "color": "Negro", "hex": "#141414", "stock": 22 },
+      { "size": "Sin talla", "color": "Coyote", "hex": "#9A7B4F", "stock": 21 },
+      { "size": "Sin Talla", "color": "Camuflaje", "hex": "#B3C297", "stock": 42 }
     ]
   },
   {
