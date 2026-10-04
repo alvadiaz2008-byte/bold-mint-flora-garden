@@ -36,16 +36,14 @@
   {
     "id": 2,
     "sku": "ATL-UNI-002",
-    "name": "Pantalón cargo Ripstop 6 bolsillos",
+    "name": "Birrete",
     "description": "Pantalón de faena en ripstop polialgodón. Seis bolsillos de carga con fuelle, rodillas reforzadas y pretina con elástico interior.",
-    "category": "uniformes",
-    "priceSoles": 189,
+    "category": "Gorras",
+    "priceSoles": 20,
     "stock": 18,
-    "sizes": ["S", "M", "L", "XL", "XXL", "XXXL"],
+    "sizes": ["Sin talla"],
     "colors": [
-      { "name": "Olivo", "hex": "#4B5320" },
-      { "name": "Khaki", "hex": "#A3926B" },
-      { "name": "Negro", "hex": "#1A1A1A" }
+      { "name": "Camuflaje", "hex": "#B3C297" },
     ],
     "images": [
       "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=900&q=80",
@@ -59,26 +57,9 @@
       "Cierre": "Botón y bragueta",
       "Cuidado": "Lavado industrial suave"
     },
-    "featured": true,
+    "featured": false,
     "variants": [
-      { "size": "S", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "S", "color": "Khaki", "hex": "#A3926B", "stock": 1 },
-      { "size": "S", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "M", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "M", "color": "Khaki", "hex": "#A3926B", "stock": 1 },
-      { "size": "M", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "L", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "L", "color": "Khaki", "hex": "#A3926B", "stock": 1 },
-      { "size": "L", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "XL", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "XL", "color": "Khaki", "hex": "#A3926B", "stock": 1 },
-      { "size": "XL", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "XXL", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "XXL", "color": "Khaki", "hex": "#A3926B", "stock": 1 },
-      { "size": "XXL", "color": "Negro", "hex": "#1A1A1A", "stock": 1 },
-      { "size": "XXXL", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
-      { "size": "XXXL", "color": "Khaki", "hex": "#A3926B", "stock": 1 },
-      { "size": "XXXL", "color": "Negro", "hex": "#1A1A1A", "stock": 1 }
+      { "size": "Sin talla", "color": "Camuflaje", "hex": "#B3C297", "stock": 54 }
     ]
   },
   {
