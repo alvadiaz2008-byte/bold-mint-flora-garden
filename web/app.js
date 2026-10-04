@@ -30,7 +30,6 @@
 }
 .logo-name strong { letter-spacing: 0.12em; }
 .logo-name span { letter-spacing: 0.14em; }
-/* Catálogo: miniatura cuadrada (no afecta ficha de producto) */
 .card-photo {
   aspect-ratio: 1 / 1 !important;
   min-height: 0 !important;
@@ -44,6 +43,8 @@
   object-fit: cover !important;
   object-position: center !important;
 }
+/* Ocultar Características y Ficha técnica */
+.panels { display: none !important; }
 `;
   document.head.appendChild(style);
 
