@@ -38,7 +38,7 @@
     "sku": "ATL-UNI-002",
     "name": "Birrete",
     "description": "Pantalón de faena en ripstop polialgodón. Seis bolsillos de carga con fuelle, rodillas reforzadas y pretina con elástico interior.",
-    "category": "Gorras",
+    "category": "Accesorios",
     "priceSoles": 20,
     "stock": 18,
     "sizes": ["Sin talla"],
@@ -46,8 +46,7 @@
       { "name": "Camuflaje", "hex": "#B3C297" },
     ],
     "images": [
-      "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=900&q=80"
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Birrete%2001.jpeg"
     ],
     "material": "Ripstop 65% poliéster / 35% algodón",
     "weightG": 520,
