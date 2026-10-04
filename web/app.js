@@ -7,7 +7,10 @@
 .hero-bg {
   background: url("public/logo.png") center/contain no-repeat !important;
   background-color: #141611 !important;
-  opacity: 0.22 !important;
+  opacity: 0.65 !important;
+}
+.hero-bg::after {
+  background: color-mix(in oklab, #0b0c0a 35%, transparent) !important;
 }
 .hero { min-height: 12rem; }
 @media (min-width: 768px) { .hero { min-height: 16rem; } }
