@@ -33,9 +33,12 @@
 `;
   document.head.appendChild(style);
 
+  let scheduled = false;
   function applyLogo() {
     document.querySelectorAll("a.logo").forEach((el) => {
-      el.setAttribute("aria-label", "LEAD BAZAR MILITAR — inicio");
+      if (el.getAttribute("aria-label") !== "LEAD BAZAR MILITAR — inicio") {
+        el.setAttribute("aria-label", "LEAD BAZAR MILITAR — inicio");
+      }
       if (!el.querySelector("img.logo-img")) {
         const svg = el.querySelector("svg");
         const img = document.createElement("img");
@@ -51,9 +54,18 @@
       if (name) {
         const strong = name.querySelector("strong");
         const span = name.querySelector("span");
-        if (strong) strong.textContent = "LEAD";
-        if (span) span.textContent = "BAZAR MILITAR";
+        if (strong && strong.textContent !== "LEAD") strong.textContent = "LEAD";
+        if (span && span.textContent !== "BAZAR MILITAR") span.textContent = "BAZAR MILITAR";
       }
+    });
+  }
+
+  function scheduleLogo() {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(function () {
+      scheduled = false;
+      applyLogo();
     });
   }
 
@@ -75,11 +87,12 @@
       applyLogo();
       const root = document.querySelector("#app");
       if (root) {
-        new MutationObserver(applyLogo).observe(root, {
+        new MutationObserver(scheduleLogo).observe(root, {
           childList: true,
           subtree: true,
         });
       }
+      window.addEventListener("hashchange", scheduleLogo);
     };
     document.body.appendChild(s);
   }
