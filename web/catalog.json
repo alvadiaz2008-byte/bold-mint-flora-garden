@@ -10,7 +10,7 @@
     "sizes": ["S", "M", "L", "XL"],
     "colors": [{ "name": "Camuflaje", "hex": "#B3C297" }],
     "images": [
-      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Uniforme%20militar.jpeg"
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Uniforme%20militar.webp"
     ],
     "featured": true,
     "variants": [
@@ -62,7 +62,7 @@
   {
     "id": 301,
     "sku": "ATL-CHA-001",
-    "name": "PH tipo pechera",
+    "name": "RH tipo pechera",
     "description": "Confeccionado para optimizar el desempeño en terreno, este chest rig combina una estructura liviana de perfil bajo con un sistema de acceso inmediato a tu equipo. Su arnés ergonómico en (X) asegura una distribución equilibrada de la carga, garantizando máxima ventilación y total libertad de movimiento en cada maniobra.",
     "category": "chalecos",
     "priceSoles": 105,
@@ -70,7 +70,7 @@
     "sizes": ["Sin talla"],
     "colors": [{ "name": "Olivo", "hex": "#4B5320" }],
     "images": [
-      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/RH%20tipo%20pechera%2001.jpeg"
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/RH%20tipo%20pechera%2001.webp"
     ],
     "featured": true,
     "variants": [
@@ -88,7 +88,7 @@
     "sizes": ["Sin talla"],
     "colors": [{ "name": "Olivo", "hex": "#4B5320" }],
     "images": [
-      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/RH%2001.jpeg"
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/RH%2001.webp"
     ],
     "featured": true,
     "variants": [
@@ -111,7 +111,7 @@
       { "name": "Camuflaje", "hex": "#B3C297" }
     ],
     "images": [
-      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Mochila%2050L%2001.jpeg"
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Mochila%2050L%2001.webp"
     ],
     "featured": true,
     "variants": [
@@ -211,7 +211,7 @@
     "sizes": ["Sin talla"],
     "colors": [{ "name": "Camuflaje", "hex": "#B3C297" }],
     "images": [
-      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Birrete%2001.jpeg"
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Birrete%2001.webp"
     ],
     "featured": false,
     "variants": [
@@ -231,7 +231,7 @@
       { "name": "Coyote Brawn", "hex": "#81613C" }
     ],
     "images": [
-      "https://github.com/alvadiaz2008-byte/bold-mint-flora-garden/blob/main/imagenes/Cinturon%20tactico.webp?raw=true"
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Cinturon%20tactico.webp"
     ],
     "featured": false,
     "variants": [
