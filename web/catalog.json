@@ -221,16 +221,14 @@
   {
     "id": 701,
     "sku": "ATL-ACC-001",
-    "name": "Gorra operator con velcro",
-    "description": "Gorra de perfil bajo con visera curva, ajuste de velcro posterior y panel de velcro frontal para parche.",
+    "name": "Sinturon tactico",
+    "description": "Sinturon tactico marca Condor, equipamento de alta duracion y resistencia.",
     "category": "accesorios",
-    "priceSoles": 45,
+    "priceSoles": 35,
     "stock": 30,
-    "sizes": ["S/M", "L/XL"],
+    "sizes": ["Talla unica"],
     "colors": [
-      { "name": "Negro", "hex": "#1A1A1A" },
-      { "name": "Olivo", "hex": "#4B5320" },
-      { "name": "Arena", "hex": "#C2A878" }
+      { "name": "Coyote Brawn", "hex": "#81613C" }
     ],
     "images": [
       "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=900&q=80",
@@ -238,12 +236,7 @@
     ],
     "featured": false,
     "variants": [
-      { "size": "S/M", "color": "Negro", "hex": "#1A1A1A", "stock": 5 },
-      { "size": "S/M", "color": "Olivo", "hex": "#4B5320", "stock": 5 },
-      { "size": "S/M", "color": "Arena", "hex": "#C2A878", "stock": 5 },
-      { "size": "L/XL", "color": "Negro", "hex": "#1A1A1A", "stock": 5 },
-      { "size": "L/XL", "color": "Olivo", "hex": "#4B5320", "stock": 5 },
-      { "size": "L/XL", "color": "Arena", "hex": "#C2A878", "stock": 5 }
+      { "size": "Sin talla", "color": "Coyote Brawn", "hex": "#81613C", "stock": 5 }
     ]
   },
   {
