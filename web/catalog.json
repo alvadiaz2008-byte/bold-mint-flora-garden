@@ -1,7 +1,105 @@
 [
   {
-    "id": 1,
+    "id": 11,
     "sku": "ATL-UNI-001",
+    "name": "Conjunto camuflaje selva",
+    "description": "Camisa y pantalón de camuflaje selva en ripstop. Se vende como conjunto.",
+    "category": "uniformes",
+    "priceSoles": 320,
+    "stock": 9,
+    "sizes": ["S", "M", "L", "XL", "XXL"],
+    "colors": [{ "name": "Selva", "hex": "#3D4A2F" }],
+    "images": [
+      "https://images.unsplash.com/photo-1548449112-96a38a64381d?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1579912437766-7896df6d3cd3?auto=format&fit=crop&w=900&q=80"
+    ],
+    "featured": true,
+    "variants": [
+      { "size": "S", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
+      { "size": "M", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
+      { "size": "L", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
+      { "size": "XL", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
+      { "size": "XXL", "color": "Selva", "hex": "#3D4A2F", "stock": 1 }
+    ]
+  },
+  {
+    "id": 12,
+    "sku": "ATL-CAL-001",
+    "name": "Bota desierto transpirable",
+    "description": "Bota de caña media para clima cálido. Malla y gamuza en la capellada para ventilación.",
+    "category": "calzado",
+    "priceSoles": 299,
+    "stock": 11,
+    "sizes": ["38", "39", "40", "41", "42", "43", "44", "45", "46"],
+    "colors": [
+      { "name": "Arena", "hex": "#C2A878" },
+      { "name": "Coyote", "hex": "#9A7B4F" }
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=900&q=80"
+    ],
+    "featured": false,
+    "variants": [
+      { "size": "38", "color": "Arena", "hex": "#C2A878", "stock": 1 },
+      { "size": "38", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
+      { "size": "39", "color": "Arena", "hex": "#C2A878", "stock": 1 },
+      { "size": "39", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
+      { "size": "40", "color": "Arena", "hex": "#C2A878", "stock": 1 },
+      { "size": "40", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
+      { "size": "41", "color": "Arena", "hex": "#C2A878", "stock": 1 },
+      { "size": "41", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
+      { "size": "42", "color": "Arena", "hex": "#C2A878", "stock": 1 },
+      { "size": "42", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
+      { "size": "43", "color": "Arena", "hex": "#C2A878", "stock": 1 },
+      { "size": "43", "color": "Coyote", "hex": "#9A7B4F", "stock": 0 },
+      { "size": "44", "color": "Arena", "hex": "#C2A878", "stock": 0 },
+      { "size": "44", "color": "Coyote", "hex": "#9A7B4F", "stock": 0 },
+      { "size": "45", "color": "Arena", "hex": "#C2A878", "stock": 0 },
+      { "size": "45", "color": "Coyote", "hex": "#9A7B4F", "stock": 0 },
+      { "size": "46", "color": "Arena", "hex": "#C2A878", "stock": 0 },
+      { "size": "46", "color": "Coyote", "hex": "#9A7B4F", "stock": 0 }
+    ]
+  },
+  {
+    "id": 3,
+    "sku": "ATL-CHA-001",
+    "name": "PH tipo pechera",
+    "description": "Confeccionado para optimizar el desempeño en terreno, este chest rig combina una estructura liviana de perfil bajo con un sistema de acceso inmediato a tu equipo. Su arnés ergonómico en (X) asegura una distribución equilibrada de la carga, garantizando máxima ventilación y total libertad de movimiento en cada maniobra.",
+    "category": "chalecos",
+    "priceSoles": 105,
+    "stock": 12,
+    "sizes": ["Sin talla"],
+    "colors": [{ "name": "Olivo", "hex": "#4B5320" }],
+    "images": [
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/RH%20tipo%20pechera%2001.jpeg"
+    ],
+    "featured": true,
+    "variants": [
+      { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 32 }
+    ]
+  },
+  {
+    "id": 4,
+    "sku": "ATL-CHA-002",
+    "name": "RH",
+    "description": "Diseñado para ofrecer máxima libertad de movimiento y un acceso rápido a tu equipamiento. Su perfil ligero y ergonómico distribuye la carga de forma equilibrada, convirtiéndolo en la opción ideal para configuraciones de alta agilidad donde la ventilación y la respuesta inmediata son fundamentales.",
+    "category": "chalecos",
+    "priceSoles": 120,
+    "stock": 10,
+    "sizes": ["Sin talla"],
+    "colors": [{ "name": "Olivo", "hex": "#4B5320" }],
+    "images": [
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/RH%2001.jpeg"
+    ],
+    "featured": true,
+    "variants": [
+      { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 41 }
+    ]
+  },
+  {
+    "id": 1,
+    "sku": "ATL-MOC-001",
     "name": "Mochila 50 Litros",
     "description": "La combinación ideal entre resistencia extrema, capacidad de organización y confort ergonómico. Diseñada para adaptarse a cualquier desafío, desde expediciones al aire libre hasta la rutina urbana diaria.",
     "category": "mochilas",
@@ -26,68 +124,8 @@
     ]
   },
   {
-    "id": 2,
-    "sku": "ATL-UNI-002",
-    "name": "Birrete",
-    "description": "Pantalón de faena en ripstop polialgodón. Seis bolsillos de carga con fuelle, rodillas reforzadas y pretina con elástico interior.",
-    "category": "gorras",
-    "priceSoles": 20,
-    "stock": 18,
-    "sizes": ["Sin talla"],
-    "colors": [
-      { "name": "Camuflaje", "hex": "#B3C297" }
-    ],
-    "images": [
-      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Birrete%2001.jpeg"
-    ],
-    "featured": false,
-    "variants": [
-      { "size": "Sin talla", "color": "Camuflaje", "hex": "#B3C297", "stock": 54 }
-    ]
-  },
-  {
-    "id": 3,
-    "sku": "ATL-CAL-001",
-    "name": "PH tipo pechera",
-    "description": "Confeccionado para optimizar el desempeño en terreno, este chest rig combina una estructura liviana de perfil bajo con un sistema de acceso inmediato a tu equipo. Su arnés ergonómico en (X) asegura una distribución equilibrada de la carga, garantizando máxima ventilación y total libertad de movimiento en cada maniobra.",
-    "category": "chalecos",
-    "priceSoles": 105,
-    "stock": 12,
-    "sizes": ["Sin talla"],
-    "colors": [
-      { "name": "Olivo", "hex": "#4B5320" }
-    ],
-    "images": [
-      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/RH%20tipo%20pechera%2001.jpeg"
-    ],
-    "featured": true,
-    "variants": [
-      { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 32 }
-    ]
-  },
-  {
-    "id": 4,
-    "sku": "ATL-CHA-001",
-    "name": "RH",
-    "description": "Diseñado para ofrecer máxima libertad de movimiento y un acceso rápido a tu equipamiento. Su perfil ligero y ergonómico distribuye la carga de forma equilibrada, convirtiéndolo en la opción ideal para configuraciones de alta agilidad donde la ventilación y la respuesta inmediata son fundamentales.",
-    "category": "chalecos",
-    "priceSoles": 120,
-    "stock": 10,
-    "sizes": ["Sin talla"],
-    "colors": [
-      { "name": "Olivo", "hex": "#4B5320" }
-    ],
-    "images": [
-      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/RH%2001.jpeg"
-    ],
-    "featured": true,
-    "variants": [
-      { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 41 }
-    ]
-  },
-  {
     "id": 5,
-    "sku": "ATL-MOC-001",
+    "sku": "ATL-MOC-002",
     "name": "Mochila de asalto 40 L",
     "description": "Mochila de 40 litros con compartimento principal de boca amplia, bolsillo de hidratación, correas de compresión y panel MOLLE frontal.",
     "category": "mochilas",
@@ -108,34 +146,6 @@
       { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 5 },
       { "size": "Sin talla", "color": "Negro", "hex": "#1A1A1A", "stock": 5 },
       { "size": "Sin talla", "color": "Coyote", "hex": "#9A7B4F", "stock": 4 }
-    ]
-  },
-  {
-    "id": 6,
-    "sku": "ATL-ACC-001",
-    "name": "Gorra operator con velcro",
-    "description": "Gorra de perfil bajo con visera curva, ajuste de velcro posterior y panel de velcro frontal para parche.",
-    "category": "accesorios",
-    "priceSoles": 45,
-    "stock": 30,
-    "sizes": ["S/M", "L/XL"],
-    "colors": [
-      { "name": "Negro", "hex": "#1A1A1A" },
-      { "name": "Olivo", "hex": "#4B5320" },
-      { "name": "Arena", "hex": "#C2A878" }
-    ],
-    "images": [
-      "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=900&q=80"
-    ],
-    "featured": false,
-    "variants": [
-      { "size": "S/M", "color": "Negro", "hex": "#1A1A1A", "stock": 5 },
-      { "size": "S/M", "color": "Olivo", "hex": "#4B5320", "stock": 5 },
-      { "size": "S/M", "color": "Arena", "hex": "#C2A878", "stock": 5 },
-      { "size": "L/XL", "color": "Negro", "hex": "#1A1A1A", "stock": 5 },
-      { "size": "L/XL", "color": "Olivo", "hex": "#4B5320", "stock": 5 },
-      { "size": "L/XL", "color": "Arena", "hex": "#C2A878", "stock": 5 }
     ]
   },
   {
@@ -167,6 +177,75 @@
       { "size": "XL", "color": "Olivo", "hex": "#4B5320", "stock": 1 },
       { "size": "XXL", "color": "Negro", "hex": "#1A1A1A", "stock": 0 },
       { "size": "XXL", "color": "Olivo", "hex": "#4B5320", "stock": 0 }
+    ]
+  },
+  {
+    "id": 10,
+    "sku": "ATL-ABR-002",
+    "name": "Poncho impermeable 3 en 1",
+    "description": "Poncho de nylon recubierto que cubre al usuario con mochila puesta.",
+    "category": "abrigos",
+    "priceSoles": 119,
+    "stock": 16,
+    "sizes": ["Sin talla"],
+    "colors": [
+      { "name": "Olivo", "hex": "#4B5320" },
+      { "name": "Negro", "hex": "#1A1A1A" }
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1516762689617-e1cffcef479d?auto=format&fit=crop&w=900&q=80"
+    ],
+    "featured": false,
+    "variants": [
+      { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 8 },
+      { "size": "Sin talla", "color": "Negro", "hex": "#1A1A1A", "stock": 8 }
+    ]
+  },
+  {
+    "id": 2,
+    "sku": "ATL-GOR-001",
+    "name": "Birrete",
+    "description": "Pantalón de faena en ripstop polialgodón. Seis bolsillos de carga con fuelle, rodillas reforzadas y pretina con elástico interior.",
+    "category": "gorras",
+    "priceSoles": 20,
+    "stock": 18,
+    "sizes": ["Sin talla"],
+    "colors": [{ "name": "Camuflaje", "hex": "#B3C297" }],
+    "images": [
+      "https://raw.githubusercontent.com/alvadiaz2008-byte/bold-mint-flora-garden/refs/heads/main/imagenes/Birrete%2001.jpeg"
+    ],
+    "featured": false,
+    "variants": [
+      { "size": "Sin talla", "color": "Camuflaje", "hex": "#B3C297", "stock": 54 }
+    ]
+  },
+  {
+    "id": 6,
+    "sku": "ATL-ACC-001",
+    "name": "Gorra operator con velcro",
+    "description": "Gorra de perfil bajo con visera curva, ajuste de velcro posterior y panel de velcro frontal para parche.",
+    "category": "accesorios",
+    "priceSoles": 45,
+    "stock": 30,
+    "sizes": ["S/M", "L/XL"],
+    "colors": [
+      { "name": "Negro", "hex": "#1A1A1A" },
+      { "name": "Olivo", "hex": "#4B5320" },
+      { "name": "Arena", "hex": "#C2A878" }
+    ],
+    "images": [
+      "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=900&q=80"
+    ],
+    "featured": false,
+    "variants": [
+      { "size": "S/M", "color": "Negro", "hex": "#1A1A1A", "stock": 5 },
+      { "size": "S/M", "color": "Olivo", "hex": "#4B5320", "stock": 5 },
+      { "size": "S/M", "color": "Arena", "hex": "#C2A878", "stock": 5 },
+      { "size": "L/XL", "color": "Negro", "hex": "#1A1A1A", "stock": 5 },
+      { "size": "L/XL", "color": "Olivo", "hex": "#4B5320", "stock": 5 },
+      { "size": "L/XL", "color": "Arena", "hex": "#C2A878", "stock": 5 }
     ]
   },
   {
@@ -221,93 +300,6 @@
       { "size": "Sin talla", "color": "Negro", "hex": "#1A1A1A", "stock": 8 },
       { "size": "Sin talla", "color": "Coyote", "hex": "#9A7B4F", "stock": 7 },
       { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 7 }
-    ]
-  },
-  {
-    "id": 10,
-    "sku": "ATL-ABR-002",
-    "name": "Poncho impermeable 3 en 1",
-    "description": "Poncho de nylon recubierto que cubre al usuario con mochila puesta.",
-    "category": "abrigos",
-    "priceSoles": 119,
-    "stock": 16,
-    "sizes": ["Sin talla"],
-    "colors": [
-      { "name": "Olivo", "hex": "#4B5320" },
-      { "name": "Negro", "hex": "#1A1A1A" }
-    ],
-    "images": [
-      "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1516762689617-e1cffcef479d?auto=format&fit=crop&w=900&q=80"
-    ],
-    "featured": false,
-    "variants": [
-      { "size": "Sin talla", "color": "Olivo", "hex": "#4B5320", "stock": 8 },
-      { "size": "Sin talla", "color": "Negro", "hex": "#1A1A1A", "stock": 8 }
-    ]
-  },
-  {
-    "id": 11,
-    "sku": "ATL-UNI-003",
-    "name": "Conjunto camuflaje selva",
-    "description": "Camisa y pantalón de camuflaje selva en ripstop. Se vende como conjunto.",
-    "category": "uniformes",
-    "priceSoles": 320,
-    "stock": 9,
-    "sizes": ["S", "M", "L", "XL", "XXL"],
-    "colors": [
-      { "name": "Selva", "hex": "#3D4A2F" }
-    ],
-    "images": [
-      "https://images.unsplash.com/photo-1548449112-96a38a64381d?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1579912437766-7896df6d3cd3?auto=format&fit=crop&w=900&q=80"
-    ],
-    "featured": true,
-    "variants": [
-      { "size": "S", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
-      { "size": "M", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
-      { "size": "L", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
-      { "size": "XL", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
-      { "size": "XXL", "color": "Selva", "hex": "#3D4A2F", "stock": 1 }
-    ]
-  },
-  {
-    "id": 12,
-    "sku": "ATL-CAL-002",
-    "name": "Bota desierto transpirable",
-    "description": "Bota de caña media para clima cálido. Malla y gamuza en la capellada para ventilación.",
-    "category": "calzado",
-    "priceSoles": 299,
-    "stock": 11,
-    "sizes": ["38", "39", "40", "41", "42", "43", "44", "45", "46"],
-    "colors": [
-      { "name": "Arena", "hex": "#C2A878" },
-      { "name": "Coyote", "hex": "#9A7B4F" }
-    ],
-    "images": [
-      "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=900&q=80"
-    ],
-    "featured": false,
-    "variants": [
-      { "size": "38", "color": "Arena", "hex": "#C2A878", "stock": 1 },
-      { "size": "38", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
-      { "size": "39", "color": "Arena", "hex": "#C2A878", "stock": 1 },
-      { "size": "39", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
-      { "size": "40", "color": "Arena", "hex": "#C2A878", "stock": 1 },
-      { "size": "40", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
-      { "size": "41", "color": "Arena", "hex": "#C2A878", "stock": 1 },
-      { "size": "41", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
-      { "size": "42", "color": "Arena", "hex": "#C2A878", "stock": 1 },
-      { "size": "42", "color": "Coyote", "hex": "#9A7B4F", "stock": 1 },
-      { "size": "43", "color": "Arena", "hex": "#C2A878", "stock": 1 },
-      { "size": "43", "color": "Coyote", "hex": "#9A7B4F", "stock": 0 },
-      { "size": "44", "color": "Arena", "hex": "#C2A878", "stock": 0 },
-      { "size": "44", "color": "Coyote", "hex": "#9A7B4F", "stock": 0 },
-      { "size": "45", "color": "Arena", "hex": "#C2A878", "stock": 0 },
-      { "size": "45", "color": "Coyote", "hex": "#9A7B4F", "stock": 0 },
-      { "size": "46", "color": "Arena", "hex": "#C2A878", "stock": 0 },
-      { "size": "46", "color": "Coyote", "hex": "#9A7B4F", "stock": 0 }
     ]
   }
 ]
