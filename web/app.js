@@ -124,6 +124,26 @@
     }
   }
 
+  /** Ajusta cantidades del carrito al stock disponible y guarda en localStorage */
+  function clampCartToStock(map) {
+    const cart = loadCart();
+    const next = [];
+    for (const item of cart) {
+      const size = item.size || "Sin talla";
+      const k = rowKey(item.productId, size, item.color);
+      if (!Object.prototype.hasOwnProperty.call(map, k)) {
+        next.push(item);
+        continue;
+      }
+      const max = Math.max(0, Number(map[k]) || 0);
+      if (max <= 0) continue;
+      const qty = Math.min(Math.max(1, Number(item.qty) || 1), max);
+      next.push(Object.assign({}, item, { qty: qty }));
+    }
+    localStorage.setItem(CART_KEY, JSON.stringify(next));
+    return next;
+  }
+
   function getReserve() {
     try {
       return JSON.parse(sessionStorage.getItem(RESERVE_KEY) || "null");
@@ -354,8 +374,10 @@
           { id: "leave", label: "Salir" },
         ],
       });
-      if (choice === "edit") location.hash = "#/carrito";
-      else location.hash = "#/";
+      if (choice === "edit") {
+        clampCartToStock(map);
+        location.hash = "#/carrito";
+      } else location.hash = "#/";
       return { ok: false, bad };
     }
     setBadKeys([]);
@@ -396,8 +418,10 @@
             { id: "leave", label: "Salir" },
           ],
         });
-        if (choice === "edit") location.hash = "#/carrito";
-        else location.hash = "#/";
+        if (choice === "edit") {
+          clampCartToStock(freshMap);
+          location.hash = "#/carrito";
+        } else location.hash = "#/";
         return { ok: false };
       }
       const next = Math.max(0, have - need);
