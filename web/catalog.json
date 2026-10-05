@@ -1,6 +1,6 @@
 [
   {
-    "id": 11,
+    "id": 101,
     "sku": "ATL-UNI-001",
     "name": "Conjunto camuflaje selva",
     "description": "Camisa y pantalón de camuflaje selva en ripstop. Se vende como conjunto.",
@@ -23,7 +23,7 @@
     ]
   },
   {
-    "id": 12,
+    "id": 201,
     "sku": "ATL-CAL-001",
     "name": "Bota desierto transpirable",
     "description": "Bota de caña media para clima cálido. Malla y gamuza en la capellada para ventilación.",
@@ -62,7 +62,7 @@
     ]
   },
   {
-    "id": 3,
+    "id": 301,
     "sku": "ATL-CHA-001",
     "name": "PH tipo pechera",
     "description": "Confeccionado para optimizar el desempeño en terreno, este chest rig combina una estructura liviana de perfil bajo con un sistema de acceso inmediato a tu equipo. Su arnés ergonómico en (X) asegura una distribución equilibrada de la carga, garantizando máxima ventilación y total libertad de movimiento en cada maniobra.",
@@ -80,7 +80,7 @@
     ]
   },
   {
-    "id": 4,
+    "id": 302,
     "sku": "ATL-CHA-002",
     "name": "RH",
     "description": "Diseñado para ofrecer máxima libertad de movimiento y un acceso rápido a tu equipamiento. Su perfil ligero y ergonómico distribuye la carga de forma equilibrada, convirtiéndolo en la opción ideal para configuraciones de alta agilidad donde la ventilación y la respuesta inmediata son fundamentales.",
@@ -98,7 +98,7 @@
     ]
   },
   {
-    "id": 1,
+    "id": 401,
     "sku": "ATL-MOC-001",
     "name": "Mochila 50 Litros",
     "description": "La combinación ideal entre resistencia extrema, capacidad de organización y confort ergonómico. Diseñada para adaptarse a cualquier desafío, desde expediciones al aire libre hasta la rutina urbana diaria.",
@@ -124,7 +124,7 @@
     ]
   },
   {
-    "id": 5,
+    "id": 402,
     "sku": "ATL-MOC-002",
     "name": "Mochila de asalto 40 L",
     "description": "Mochila de 40 litros con compartimento principal de boca amplia, bolsillo de hidratación, correas de compresión y panel MOLLE frontal.",
@@ -149,7 +149,7 @@
     ]
   },
   {
-    "id": 7,
+    "id": 501,
     "sku": "ATL-ABR-001",
     "name": "Chaqueta softshell cortaviento",
     "description": "Softshell de tres capas: exterior elástico cortaviento, membrana transpirable y interior de micropolar.",
@@ -180,7 +180,7 @@
     ]
   },
   {
-    "id": 10,
+    "id": 502,
     "sku": "ATL-ABR-002",
     "name": "Poncho impermeable 3 en 1",
     "description": "Poncho de nylon recubierto que cubre al usuario con mochila puesta.",
@@ -203,7 +203,7 @@
     ]
   },
   {
-    "id": 2,
+    "id": 601,
     "sku": "ATL-GOR-001",
     "name": "Birrete",
     "description": "Pantalón de faena en ripstop polialgodón. Seis bolsillos de carga con fuelle, rodillas reforzadas y pretina con elástico interior.",
@@ -221,7 +221,7 @@
     ]
   },
   {
-    "id": 6,
+    "id": 701,
     "sku": "ATL-ACC-001",
     "name": "Gorra operator con velcro",
     "description": "Gorra de perfil bajo con visera curva, ajuste de velcro posterior y panel de velcro frontal para parche.",
@@ -249,7 +249,7 @@
     ]
   },
   {
-    "id": 8,
+    "id": 702,
     "sku": "ATL-ACC-002",
     "name": "Guantes tácticos con nudillo",
     "description": "Guantes de dedo completo con palma de cuero sintético antideslizante, nudillos termoplásticos y dorso transpirable.",
@@ -278,7 +278,7 @@
     ]
   },
   {
-    "id": 9,
+    "id": 703,
     "sku": "ATL-ACC-003",
     "name": "Cinturón rigger 45 mm",
     "description": "Cinturón de 45 mm en nylon de alta densidad con hebilla de doble barra.",
