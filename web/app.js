@@ -444,7 +444,6 @@
     return { ok: true };
   }
 
-  /** Libera stock en paralelo; no bloquea la UI */
   async function releaseReserve() {
     const res = getReserve();
     setReserve(null);
@@ -573,7 +572,13 @@
         return;
       }
     }
-    if (route === "comprar") await onEnterComprar();
+    if (route === "comprar") {
+      await onEnterComprar();
+      if (window.LeadMap) {
+        setTimeout(window.LeadMap.enhanceBuyerForm, 40);
+        setTimeout(window.LeadMap.enhanceBuyerForm, 200);
+      }
+    }
     if (route === "carrito") {
       setTimeout(markBadCartRows, 50);
       setTimeout(markBadCartRows, 300);
@@ -634,6 +639,15 @@
         });
         return;
       }
+      if (window.LeadMap && !window.LeadMap.hasLocation()) {
+        await showLeadDialog({
+          kicker: "Ubicación",
+          title: "Falta la ubicación",
+          message: "Elige el punto de entrega en el mapa de Iquitos.",
+          buttons: [{ id: "ok", label: "Entendido" }],
+        });
+        return;
+      }
       btn.disabled = true;
       btn.dataset.sheetdbHandling = "1";
       const prevText = btn.textContent;
@@ -655,6 +669,8 @@
         const dni = fd ? String(fd.get("dni") || "").trim() : "";
         const address = fd ? String(fd.get("address") || "").trim() : "";
         const ref = fd ? String(fd.get("ref") || "").trim() : "";
+        const mapsLink =
+          (window.LeadMap && window.LeadMap.getMapsLinkFromForm()) || "";
         const total = money(
           items.reduce(
             (n, i) => n + Number(i.priceSoles || 0) * Number(i.qty || 0),
@@ -685,6 +701,7 @@
           dni ? "DNI: " + dni : null,
           "Ciudad: Iquitos, Loreto",
           "Dirección: " + address,
+          mapsLink ? "Google Maps: " + mapsLink : null,
           ref ? "Referencia: " + ref : null,
         ]
           .filter(Boolean)
@@ -739,6 +756,7 @@
       }
     });
     if (currentRoute() === "carrito") markBadCartRows();
+    if (currentRoute() === "comprar" && window.LeadMap) window.LeadMap.enhanceBuyerForm();
   }
 
   function scheduleLogo() {
@@ -777,7 +795,13 @@
           subtree: true,
         });
       }
-      if (currentRoute() === "comprar") onEnterComprar();
+      if (currentRoute() === "comprar") {
+        onEnterComprar();
+        if (window.LeadMap) {
+          setTimeout(window.LeadMap.enhanceBuyerForm, 40);
+          setTimeout(window.LeadMap.enhanceBuyerForm, 200);
+        }
+      }
       if (currentRoute() === "carrito") setTimeout(markBadCartRows, 100);
     };
     document.body.appendChild(s);
