@@ -1,5 +1,9 @@
 (function () {
   const STORE_KEY = "atlas-tactico-store-v1";
+  const CART_KEY = "atlas-tactico-cart-v1";
+  const STOCK_CACHE_KEY = "lead-stock-cache-v1";
+  const SHEETDB = "https://sheetdb.io/api/v1/jrxq3blppmk92";
+  const WHATSAPP = "51955802712";
   const app = document.querySelector("#app");
 
   const style = document.createElement("style");
@@ -43,10 +47,192 @@
   object-fit: cover !important;
   object-position: center !important;
 }
-/* Ocultar Características y Ficha técnica */
 .panels { display: none !important; }
 `;
   document.head.appendChild(style);
+
+  function rowKey(productId, size, color) {
+    return String(productId) + "|" + String(size || "Sin talla") + "|" + String(color || "");
+  }
+
+  function loadProducts() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveProducts(list) {
+    localStorage.setItem(STORE_KEY, JSON.stringify(list));
+  }
+
+  function loadCart() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function applyStockRows(rows) {
+    if (!Array.isArray(rows) || !rows.length) return;
+    const map = {};
+    rows.forEach((r) => {
+      const k =
+        r.key ||
+        rowKey(r.product_id, r.size, r.color);
+      map[k] = Math.max(0, Number(r.stock) || 0);
+    });
+    localStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(map));
+
+    const list = loadProducts().map((p) => {
+      const variants = (p.variants || []).map((v) => {
+        const k = rowKey(p.id, v.size, v.color);
+        if (Object.prototype.hasOwnProperty.call(map, k)) {
+          return { ...v, stock: map[k] };
+        }
+        return v;
+      });
+      const stock = variants.reduce(
+        (n, v) => n + Math.max(0, Number(v.stock) || 0),
+        0,
+      );
+      return { ...p, variants, stock };
+    });
+    saveProducts(list);
+  }
+
+  async function fetchSheetStock() {
+    const res = await fetch(SHEETDB, { cache: "no-store" });
+    if (!res.ok) throw new Error("No se pudo leer el stock (SheetDB)");
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  async function seedSheetIfEmpty(rows) {
+    if (rows.length) return rows;
+    const products = loadProducts();
+    const data = [];
+    products.forEach((p) => {
+      (p.variants || []).forEach((v) => {
+        data.push({
+          key: rowKey(p.id, v.size, v.color),
+          product_id: String(p.id),
+          sku: p.sku || "",
+          name: p.name || "",
+          size: v.size || "Sin talla",
+          color: v.color || "",
+          stock: String(Math.max(0, Number(v.stock) || 0)),
+        });
+      });
+    });
+    if (!data.length) return rows;
+    const res = await fetch(SHEETDB, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ data }),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      console.warn("SheetDB seed failed", res.status, errText);
+      throw new Error(
+        "La hoja de Excel está vacía. En la fila 1 pon: key | product_id | sku | name | size | color | stock",
+      );
+    }
+    return fetchSheetStock();
+  }
+
+  async function syncStockFromSheet() {
+    let rows = await fetchSheetStock();
+    try {
+      rows = await seedSheetIfEmpty(rows);
+    } catch (e) {
+      console.warn(e);
+    }
+    applyStockRows(rows);
+    return rows;
+  }
+
+  async function patchStock(key, nextStock) {
+    const url = SHEETDB + "/key/" + encodeURIComponent(key);
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ stock: String(Math.max(0, nextStock)) }),
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error("No se pudo actualizar stock de " + key + ": " + t);
+    }
+  }
+
+  function money(n) {
+    return "S/ " + Number(n || 0).toFixed(2);
+  }
+
+  function variantNote(size, color) {
+    const s = size && size !== "Sin talla" ? size : null;
+    if (s && color) return s + " / " + color;
+    return color || s || "—";
+  }
+
+  /** Confirmar compra: consulta stock fresco, valida, descuenta en Excel y en caché local */
+  async function confirmPurchaseWithSheet(items) {
+    const rows = await fetchSheetStock();
+    const map = {};
+    rows.forEach((r) => {
+      const k = r.key || rowKey(r.product_id, r.size, r.color);
+      map[k] = Math.max(0, Number(r.stock) || 0);
+    });
+
+    for (const item of items) {
+      const size = item.size || "Sin talla";
+      const k = rowKey(item.productId, size, item.color);
+      const have = map[k];
+      const need = Math.max(1, Number(item.qty) || 1);
+      if (have == null) {
+        throw new Error(
+          "No hay fila de stock para: " +
+            (item.name || item.productId) +
+            " (" +
+            variantNote(size, item.color) +
+            "). Revisa el Excel.",
+        );
+      }
+      if (have < need) {
+        throw new Error(
+          "Stock insuficiente: " +
+            (item.name || "") +
+            " (" +
+            variantNote(size, item.color) +
+            "). Disponible: " +
+            have +
+            ", pedido: " +
+            need,
+        );
+      }
+    }
+
+    for (const item of items) {
+      const size = item.size || "Sin talla";
+      const k = rowKey(item.productId, size, item.color);
+      const need = Math.max(1, Number(item.qty) || 1);
+      const next = Math.max(0, map[k] - need);
+      await patchStock(k, next);
+      map[k] = next;
+    }
+
+    applyStockRows(
+      Object.keys(map).map((k) => {
+        const [product_id, size, color] = k.split("|");
+        return { key: k, product_id, size, color, stock: map[k] };
+      }),
+    );
+  }
 
   let scheduled = false;
   function applyLogo() {
@@ -84,6 +270,88 @@
     });
   }
 
+  /** Intercepta "Confirmar y abrir WhatsApp" para descontar stock en SheetDB primero */
+  document.addEventListener(
+    "click",
+    async function (e) {
+      const btn = e.target.closest("[data-preview-send]");
+      if (!btn || btn.dataset.sheetdbHandling === "1") return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      const items = loadCart();
+      if (!items.length) {
+        alert("El carrito está vacío.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.dataset.sheetdbHandling = "1";
+      const prevText = btn.textContent;
+      btn.textContent = "Verificando stock…";
+
+      try {
+        await confirmPurchaseWithSheet(items);
+
+        const form = document.querySelector("[data-checkout]");
+        const fd = form ? new FormData(form) : null;
+        const name = fd ? String(fd.get("name") || "").trim() : "";
+        const phone = fd ? String(fd.get("phone") || "").trim() : "";
+        const dni = fd ? String(fd.get("dni") || "").trim() : "";
+        const address = fd ? String(fd.get("address") || "").trim() : "";
+        const ref = fd ? String(fd.get("ref") || "").trim() : "";
+
+        const total = money(
+          items.reduce((n, i) => n + Number(i.priceSoles || 0) * Number(i.qty || 0), 0),
+        );
+        const lines = items.map(
+          (i) =>
+            "• " +
+            i.qty +
+            " × " +
+            i.name +
+            " (" +
+            variantNote(i.size, i.color) +
+            ") — " +
+            money(i.priceSoles * i.qty),
+        );
+        const msg = [
+          "Pedido LEAD BAZAR MILITAR",
+          "",
+          "Prendas",
+          ...lines,
+          "Total: " + total,
+          "",
+          "Comprador",
+          "Nombre: " + name,
+          "Teléfono: " + phone,
+          dni ? "DNI: " + dni : null,
+          "Ciudad: Iquitos, Loreto",
+          "Dirección: " + address,
+          ref ? "Referencia: " + ref : null,
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        localStorage.setItem(CART_KEY, "[]");
+        window.location.href =
+          "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(msg);
+      } catch (err) {
+        console.error(err);
+        alert(err.message || "No se pudo confirmar el pedido.");
+        btn.disabled = false;
+        btn.textContent = prevText;
+        btn.dataset.sheetdbHandling = "";
+        try {
+          await syncStockFromSheet();
+        } catch (_) {}
+      }
+    },
+    true,
+  );
+
   async function boot() {
     try {
       const res = await fetch("web/catalog.json", { cache: "no-store" });
@@ -94,6 +362,12 @@
         }
       }
     } catch (_) {}
+
+    try {
+      await syncStockFromSheet();
+    } catch (e) {
+      console.warn("Stock SheetDB:", e);
+    }
 
     const s = document.createElement("script");
     s.src =
