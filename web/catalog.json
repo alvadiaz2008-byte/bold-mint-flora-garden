@@ -2,29 +2,6 @@
   {
     "id": 101,
     "sku": "ATL-UNI-001",
-    "name": "Conjunto camuflaje selva",
-    "description": "Camisa y pantalón de camuflaje selva en ripstop. Se vende como conjunto.",
-    "category": "uniformes",
-    "priceSoles": 320,
-    "stock": 9,
-    "sizes": ["S", "M", "L", "XL", "XXL"],
-    "colors": [{ "name": "Selva", "hex": "#3D4A2F" }],
-    "images": [
-      "https://images.unsplash.com/photo-1548449112-96a38a64381d?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1579912437766-7896df6d3cd3?auto=format&fit=crop&w=900&q=80"
-    ],
-    "featured": true,
-    "variants": [
-      { "size": "S", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
-      { "size": "M", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
-      { "size": "L", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
-      { "size": "XL", "color": "Selva", "hex": "#3D4A2F", "stock": 2 },
-      { "size": "XXL", "color": "Selva", "hex": "#3D4A2F", "stock": 1 }
-    ]
-  },
-  {
-    "id": 102,
-    "sku": "ATL-UNI-002",
     "name": "Uniforme militar",
     "description": "Camisa y pantalón de camuflaje selva en ripstop. Se vende como conjunto.",
     "category": "uniformes",
