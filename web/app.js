@@ -68,6 +68,37 @@
 `;
   document.head.appendChild(style);
 
+  // Silenciar bip de notificaciones (WebAudio)
+  (function muteNotifySound() {
+    const Native = window.AudioContext || window.webkitAudioContext;
+    if (!Native) return;
+    function Wrapped(options) {
+      const ctx = new Native(options);
+      const origOsc = ctx.createOscillator.bind(ctx);
+      ctx.createOscillator = function () {
+        const o = origOsc();
+        o.start = function () {};
+        o.stop = function () {};
+        return o;
+      };
+      return ctx;
+    }
+    Wrapped.prototype = Native.prototype;
+    window.AudioContext = Wrapped;
+    if (window.webkitAudioContext) window.webkitAudioContext = Wrapped;
+  })();
+
+  /** Actualiza etiqueta de stock en ficha de producto tras cambios del carrito */
+  function refreshProductStockUI() {
+    document.querySelectorAll("form").forEach((f) => {
+      if (typeof f._paintStock === "function") {
+        try {
+          f._paintStock();
+        } catch (_) {}
+      }
+    });
+  }
+
   function rowKey(productId, size, color) {
     return String(productId) + "|" + String(size || "Sin talla") + "|" + String(color || "");
   }
@@ -231,7 +262,6 @@
     setTimeout(() => overlay.remove(), 200);
   }
 
-  /** Modal estilo toast con botones */
   function showLeadDialog({ kicker, title, message, buttons }) {
     return new Promise((resolve) => {
       document.querySelector("[data-lead-toast]")?.remove();
@@ -250,11 +280,6 @@
         ${message ? `<p class="lead-toast-msg">${message}</p>` : ""}
         <div class="lead-toast-actions">${btns}</div>
       </div>`;
-      overlay.addEventListener("click", (ev) => {
-        if (ev.target === overlay) {
-          /* no cerrar al fondo: debe elegir */
-        }
-      });
       overlay.querySelectorAll("[data-lead-btn]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const idx = Number(btn.getAttribute("data-lead-btn"));
@@ -291,7 +316,6 @@
     return bad;
   }
 
-  /** Reserva stock al entrar a #/comprar */
   async function reserveCartStock() {
     if (getReserve()) return { ok: true, already: true };
 
@@ -406,7 +430,6 @@
     return { ok: true };
   }
 
-  /** Devuelve stock reservado al Excel si el usuario abandona */
   async function releaseReserve() {
     const res = getReserve();
     if (!res || !res.items || !res.items.length) {
@@ -482,7 +505,6 @@
     }
   }
 
-  /** Marca en rojo filas del carrito sin stock suficiente */
   function markBadCartRows() {
     const bad = getBadKeys();
     if (!bad.length) return;
@@ -495,7 +517,6 @@
         row.classList.add("stock-bad");
         const input = row.querySelector('input[type="number"]');
         if (input) {
-          // max ya lo pone la app; reforzamos desde caché
           try {
             const map = JSON.parse(localStorage.getItem(STOCK_CACHE_KEY) || "{}");
             if (map[k] != null) {
@@ -510,7 +531,6 @@
     });
   }
 
-  // —— Navegación ——
   let lastRoute = currentRoute();
 
   window.addEventListener("hashchange", async function () {
@@ -519,7 +539,6 @@
     lastRoute = route;
 
     if (prev === "comprar" && route !== "comprar") {
-      // interceptar salida: volver a comprar y preguntar
       if (getReserve()) {
         leavingGuard = true;
         location.hash = "#/comprar";
@@ -546,7 +565,37 @@
     }
   });
 
-  // Confirmar WhatsApp: stock ya reservado → solo mensaje y limpiar
+  // Al quitar del carrito (drawer) o cerrar el drawer → refrescar stock en la ficha
+  document.addEventListener(
+    "click",
+    function (e) {
+      const del = e.target.closest("[data-cart-del]");
+      if (del) {
+        setTimeout(refreshProductStockUI, 0);
+        setTimeout(refreshProductStockUI, 30);
+        setTimeout(refreshProductStockUI, 120);
+        return;
+      }
+      const overlay = e.target.closest("[data-cart-overlay]");
+      if (
+        overlay &&
+        (e.target === overlay || e.target.hasAttribute("data-cart-overlay"))
+      ) {
+        setTimeout(refreshProductStockUI, 0);
+        setTimeout(refreshProductStockUI, 50);
+      }
+      if (e.target.closest("[data-cart-close], [data-drawer-close]")) {
+        setTimeout(refreshProductStockUI, 0);
+        setTimeout(refreshProductStockUI, 50);
+      }
+    },
+    true,
+  );
+
+  window.addEventListener("storage", function (e) {
+    if (e.key === CART_KEY) refreshProductStockUI();
+  });
+
   document.addEventListener(
     "click",
     async function (e) {
@@ -573,7 +622,6 @@
       btn.textContent = "Confirmando…";
 
       try {
-        // Si no había reserva (caso raro), reservar ahora
         if (!getReserve()) {
           const r = await reserveCartStock();
           if (!r.ok) {
