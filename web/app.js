@@ -82,9 +82,7 @@
     if (!Array.isArray(rows) || !rows.length) return;
     const map = {};
     rows.forEach((r) => {
-      const k =
-        r.key ||
-        rowKey(r.product_id, r.size, r.color);
+      const k = r.key || rowKey(r.product_id, r.size, r.color);
       map[k] = Math.max(0, Number(r.stock) || 0);
     });
     localStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(map));
@@ -108,7 +106,7 @@
 
   async function fetchSheetStock() {
     const res = await fetch(SHEETDB, { cache: "no-store" });
-    if (!res.ok) throw new Error("No se pudo leer el stock (SheetDB)");
+    if (!res.ok) throw new Error("No se pudo consultar el stock. Intenta de nuevo.");
     const rows = await res.json();
     return Array.isArray(rows) ? rows : [];
   }
@@ -166,7 +164,7 @@
     });
     if (!res.ok) {
       const t = await res.text().catch(() => "");
-      throw new Error("No se pudo actualizar stock de " + key + ": " + t);
+      throw new Error("No se pudo actualizar el stock. Intenta de nuevo.");
     }
   }
 
@@ -180,58 +178,98 @@
     return color || s || "—";
   }
 
-  /** Confirmar compra: consulta stock fresco, valida, descuenta en Excel y en caché local */
-  async function confirmPurchaseWithSheet(items) {
-    const rows = await fetchSheetStock();
+  function stockMapFromRows(rows) {
     const map = {};
     rows.forEach((r) => {
       const k = r.key || rowKey(r.product_id, r.size, r.color);
       map[k] = Math.max(0, Number(r.stock) || 0);
     });
+    return map;
+  }
 
+  /** Solo verifica stock (sin descontar). Devuelve mensaje de error o null si está bien. */
+  function checkStockMessage(items, map) {
     for (const item of items) {
       const size = item.size || "Sin talla";
       const k = rowKey(item.productId, size, item.color);
-      const have = map[k];
       const need = Math.max(1, Number(item.qty) || 1);
+      const have = map[k];
+      const label =
+        (item.name || "Producto") +
+        " (" +
+        variantNote(size, item.color) +
+        ")";
+
       if (have == null) {
-        throw new Error(
-          "No hay fila de stock para: " +
-            (item.name || item.productId) +
-            " (" +
-            variantNote(size, item.color) +
-            "). Revisa el Excel.",
+        return (
+          "No hay stock registrado en el Excel para:\n\n" +
+          label +
+          "\n\nAgrega esa variante en la hoja o revisa el key."
         );
       }
       if (have < need) {
-        throw new Error(
-          "Stock insuficiente: " +
-            (item.name || "") +
-            " (" +
-            variantNote(size, item.color) +
-            "). Disponible: " +
-            have +
-            ", pedido: " +
-            need,
+        return (
+          "Stock insuficiente para:\n\n" +
+          label +
+          "\n\nDisponible: " +
+          have +
+          "\nEn tu pedido: " +
+          need +
+          "\n\nReduce la cantidad o elige otra variante."
         );
       }
     }
+    return null;
+  }
+
+  /** Consulta Excel y valida el carrito. Actualiza caché local. */
+  async function validateCartAgainstSheet(items) {
+    const rows = await fetchSheetStock();
+    const map = stockMapFromRows(rows);
+    applyStockRows(rows);
+    const msg = checkStockMessage(items, map);
+    if (msg) throw new Error(msg);
+    return map;
+  }
+
+  /** Valida y descuenta en Excel (al confirmar pedido). */
+  async function confirmPurchaseWithSheet(items) {
+    const map = await validateCartAgainstSheet(items);
 
     for (const item of items) {
       const size = item.size || "Sin talla";
       const k = rowKey(item.productId, size, item.color);
       const need = Math.max(1, Number(item.qty) || 1);
-      const next = Math.max(0, map[k] - need);
+
+      // Segunda lectura por variante (por si alguien compró al mismo tiempo)
+      const freshRows = await fetchSheetStock();
+      const freshMap = stockMapFromRows(freshRows);
+      const have = freshMap[k];
+      if (have == null || have < need) {
+        applyStockRows(freshRows);
+        throw new Error(
+          checkStockMessage([item], freshMap) ||
+            "Stock insuficiente. El pedido no se confirmó.",
+        );
+      }
+
+      const next = Math.max(0, have - need);
       await patchStock(k, next);
       map[k] = next;
+      freshMap[k] = next;
+      applyStockRows(
+        Object.keys(freshMap).map((key) => {
+          const parts = key.split("|");
+          return {
+            key,
+            product_id: parts[0],
+            size: parts[1],
+            color: parts[2],
+            stock: freshMap[key],
+          };
+        }),
+      );
     }
-
-    applyStockRows(
-      Object.keys(map).map((k) => {
-        const [product_id, size, color] = k.split("|");
-        return { key: k, product_id, size, color, stock: map[k] };
-      }),
-    );
   }
 
   let scheduled = false;
@@ -270,7 +308,54 @@
     });
   }
 
-  /** Intercepta "Confirmar y abrir WhatsApp" para descontar stock en SheetDB primero */
+  /** Al enviar el formulario (Revisar pedido): consulta stock y avisa qué prenda falta */
+  document.addEventListener(
+    "submit",
+    async function (e) {
+      const form = e.target.closest("[data-checkout]");
+      if (!form || form.dataset.stockChecked === "1") return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      const items = loadCart();
+      if (!items.length) {
+        alert("El carrito está vacío.");
+        return;
+      }
+
+      const btn = form.querySelector('button[type="submit"]');
+      const prev = btn ? btn.textContent : "";
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Consultando stock…";
+      }
+
+      try {
+        await validateCartAgainstSheet(items);
+        form.dataset.stockChecked = "1";
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prev;
+        }
+        form.requestSubmit();
+        setTimeout(function () {
+          form.dataset.stockChecked = "";
+        }, 500);
+      } catch (err) {
+        console.error(err);
+        alert(err.message || "No se pudo verificar el stock.");
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prev;
+        }
+      }
+    },
+    true,
+  );
+
+  /** Confirmar y abrir WhatsApp: vuelve a consultar, descuenta y confirma */
   document.addEventListener(
     "click",
     async function (e) {
@@ -304,7 +389,10 @@
         const ref = fd ? String(fd.get("ref") || "").trim() : "";
 
         const total = money(
-          items.reduce((n, i) => n + Number(i.priceSoles || 0) * Number(i.qty || 0), 0),
+          items.reduce(
+            (n, i) => n + Number(i.priceSoles || 0) * Number(i.qty || 0),
+            0,
+          ),
         );
         const lines = items.map(
           (i) =>
