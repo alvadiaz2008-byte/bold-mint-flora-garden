@@ -124,7 +124,6 @@
     }
   }
 
-  /** Ajusta cantidades del carrito al stock disponible y guarda en localStorage */
   function clampCartToStock(map) {
     const cart = loadCart();
     const next = [];
@@ -445,28 +444,40 @@
     return { ok: true };
   }
 
+  /** Libera stock en paralelo; no bloquea la UI */
   async function releaseReserve() {
     const res = getReserve();
-    if (!res || !res.items || !res.items.length) {
-      setReserve(null);
-      return;
-    }
-    for (const r of res.items) {
-      try {
-        const rows = await fetchSheetStock();
-        const map = stockMapFromRows(rows);
-        const current = map[r.key];
-        const restore =
-          current == null ? r.before : current + Number(r.qty || 0);
-        await patchStock(r.key, restore);
-      } catch (e) {
-        console.warn("No se pudo liberar stock", r.key, e);
-      }
-    }
     setReserve(null);
+    if (!res || !res.items || !res.items.length) return;
     try {
-      await syncStockFromSheet();
-    } catch (_) {}
+      const rows = await fetchSheetStock();
+      const map = stockMapFromRows(rows);
+      await Promise.all(
+        res.items.map((r) => {
+          const current = map[r.key];
+          const restore =
+            current == null ? r.before : current + Number(r.qty || 0);
+          map[r.key] = restore;
+          return patchStock(r.key, restore).catch((e) =>
+            console.warn("No se pudo liberar stock", r.key, e),
+          );
+        }),
+      );
+      applyStockRows(
+        Object.keys(map).map((key) => {
+          const p = key.split("|");
+          return {
+            key,
+            product_id: p[0],
+            size: p[1],
+            color: p[2],
+            stock: map[key],
+          };
+        }),
+      );
+    } catch (e) {
+      console.warn("releaseReserve", e);
+    }
   }
 
   function currentRoute() {
@@ -514,9 +525,9 @@
     });
     leavingGuard = false;
     if (choice === "leave") {
-      await releaseReserve();
-      if (nextHash != null) location.hash = nextHash;
-      else location.hash = "#/";
+      const target = nextHash != null ? nextHash : "#/";
+      releaseReserve();
+      location.hash = target;
     }
   }
 
