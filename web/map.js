@@ -18,6 +18,47 @@
     return "https://www.google.com/maps?q=" + lat + "," + lng;
   }
 
+  /** Notificación con el mismo estilo que stock / producto añadido */
+  function showMapToast({ kicker, title, message, buttons }) {
+    return new Promise((resolve) => {
+      document.querySelector("[data-lead-map-toast]")?.remove();
+      const overlay = document.createElement("div");
+      overlay.className = "toast-overlay";
+      overlay.setAttribute("data-lead-map-toast", "");
+      // z-index por encima del modal del mapa (10000)
+      overlay.style.zIndex = "10050";
+      const btns = (buttons || [{ id: "ok", label: "Entendido" }])
+        .map(
+          (b, i) =>
+            `<button type="button" class="btn ${b.outline ? "outline" : ""}" data-map-toast-btn="${i}">${b.label}</button>`,
+        )
+        .join("");
+      const msgHtml = message
+        ? `<p class="lead-toast-msg">${message}</p>`
+        : "";
+      overlay.innerHTML = `<div class="toast-card" role="dialog" aria-modal="true">
+        <p class="kicker">${kicker || "Aviso"}</p>
+        <p class="toast-title">${title || ""}</p>
+        ${msgHtml}
+        <div class="lead-toast-actions">${btns}</div>
+      </div>`;
+      const dismiss = () => {
+        overlay.classList.remove("on");
+        overlay.classList.add("off");
+        setTimeout(() => overlay.remove(), 200);
+      };
+      overlay.querySelectorAll("[data-map-toast-btn]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.getAttribute("data-map-toast-btn"));
+          dismiss();
+          resolve((buttons || [{ id: "ok" }])[idx]?.id);
+        });
+      });
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add("on"));
+    });
+  }
+
   function injectStyles() {
     if (document.getElementById("lead-map-styles")) return;
     const s = document.createElement("style");
@@ -67,7 +108,11 @@
 
   function initLeadMap() {
     if (typeof L === "undefined") {
-      alert("El mapa aún no cargó. Espera e intenta de nuevo.");
+      showMapToast({
+        kicker: "Mapa",
+        title: "Mapa no listo",
+        message: "El mapa aún no cargó. Espera un momento e intenta de nuevo.",
+      });
       return;
     }
     if (leadMap) {
@@ -89,9 +134,12 @@
     leadMap.on("click", (e) => {
       const { lat, lng } = e.latlng;
       if (!insideIquitos(lat, lng)) {
-        alert(
-          "Solo puedes marcar ubicaciones dentro de Iquitos. El servicio está limitado a la ciudad.",
-        );
+        showMapToast({
+          kicker: "Ubicación",
+          title: "Fuera de Iquitos",
+          message:
+            "Solo puedes marcar ubicaciones dentro de Iquitos.\nEl servicio está limitado a la ciudad.",
+        });
         return;
       }
       setMapMarker(lat, lng);
@@ -106,7 +154,11 @@
       leadMarker.on("dragend", () => {
         const p = leadMarker.getLatLng();
         if (!insideIquitos(p.lat, p.lng)) {
-          alert("El punto debe quedar dentro de Iquitos.");
+          showMapToast({
+            kicker: "Ubicación",
+            title: "Fuera de Iquitos",
+            message: "El punto debe quedar dentro de Iquitos.",
+          });
           leadMarker.setLatLng([leadPick.lat, leadPick.lng]);
           return;
         }
@@ -133,7 +185,11 @@
 
   function useDeviceLocation() {
     if (!navigator.geolocation) {
-      alert("Tu dispositivo no soporta geolocalización.");
+      showMapToast({
+        kicker: "Ubicación",
+        title: "No disponible",
+        message: "Tu dispositivo no soporta geolocalización.\nMarca el punto en el mapa.",
+      });
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -142,24 +198,35 @@
         const lng = pos.coords.longitude;
         if (!insideIquitos(lat, lng)) {
           if (leadMap) leadMap.setView([IQUITOS.lat, IQUITOS.lng], IQUITOS.zoom);
-          alert(
-            "Tu ubicación está fuera de Iquitos. El servicio solo está disponible dentro de la ciudad. Marca un punto en el mapa.",
-          );
+          showMapToast({
+            kicker: "Ubicación",
+            title: "Fuera de Iquitos",
+            message:
+              "Tu ubicación está fuera de Iquitos.\nEl servicio solo está disponible dentro de la ciudad.\nMarca un punto en el mapa.",
+          });
           return;
         }
         setMapMarker(lat, lng);
       },
-      () =>
-        alert(
-          "No se pudo obtener tu ubicación. Revisa permisos o marca el punto en el mapa.",
-        ),
+      () => {
+        showMapToast({
+          kicker: "Ubicación",
+          title: "No se pudo obtener",
+          message:
+            "No se pudo obtener tu ubicación.\nRevisa los permisos o marca el punto en el mapa.",
+        });
+      },
       { enableHighAccuracy: true, timeout: 12000 },
     );
   }
 
   function confirmMapPick() {
     if (!leadPick) {
-      alert("Marca un punto en el mapa o usa «Mi ubicación».");
+      showMapToast({
+        kicker: "Ubicación",
+        title: "Falta el punto",
+        message: "Marca un punto en el mapa o usa «Mi ubicación».",
+      });
       return;
     }
     const { lat, lng } = leadPick;
