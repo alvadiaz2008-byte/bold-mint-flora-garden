@@ -30,7 +30,7 @@
     "category": "uniformes",
     "priceSoles": 190,
     "stock": 9,
-    "sizes": ["S", "M", "L", "XL", "XXL"],
+    "sizes": ["S", "M", "L", "XL"],
     "colors": [{ "name": "Camuflaje", "hex": "#B3C297" }],
     "images": [
       "https://images.unsplash.com/photo-1548449112-96a38a64381d?auto=format&fit=crop&w=900&q=80",
@@ -41,8 +41,7 @@
       { "size": "S", "color": "Camuflaje", "hex": "#B3C297", "stock": 7 },
       { "size": "M", "color": "Camuflaje", "hex": "#B3C297", "stock": 8 },
       { "size": "L", "color": "Camuflaje", "hex": "#B3C297", "stock": 4 },
-      { "size": "XL", "color": "Camuflaje", "hex": "#B3C297", "stock": 70 },
-      { "size": "XXL", "color": "Camuflaje", "hex": "#B3C297", "stock": 9 }
+      { "size": "XL", "color": "Camuflaje", "hex": "#B3C297", "stock": 70 }
     ]
   },
   {
