@@ -2,6 +2,8 @@
   const STORE_KEY = "atlas-tactico-store-v1";
   const CART_KEY = "atlas-tactico-cart-v1";
   const STOCK_CACHE_KEY = "lead-stock-cache-v1";
+  const RESERVE_KEY = "lead-stock-reserve-v1";
+  const BAD_KEYS = "lead-stock-bad-v1";
   const SHEETDB = "https://sheetdb.io/api/v1/jrxq3blppmk92";
   const WHATSAPP = "51955802712";
   const app = document.querySelector("#app");
@@ -48,6 +50,21 @@
   object-position: center !important;
 }
 .panels { display: none !important; }
+.lead-toast-actions {
+  display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;
+  margin-top: 1rem;
+}
+.lead-toast-actions .btn { min-width: 7rem; }
+.lead-toast-msg {
+  margin-top: 0.5rem;
+  color: var(--muted, #9b9c90);
+  font-size: 0.95rem;
+  white-space: pre-line;
+}
+.cart-row.stock-bad {
+  outline: 2px solid #b4544a !important;
+  box-shadow: 0 0 0 1px rgba(180, 84, 74, 0.45) !important;
+}
 `;
   document.head.appendChild(style);
 
@@ -57,8 +74,7 @@
 
   function loadProducts() {
     try {
-      const raw = localStorage.getItem(STORE_KEY);
-      const list = raw ? JSON.parse(raw) : [];
+      const list = JSON.parse(localStorage.getItem(STORE_KEY) || "[]");
       return Array.isArray(list) ? list : [];
     } catch (_) {
       return [];
@@ -78,6 +94,32 @@
     }
   }
 
+  function getReserve() {
+    try {
+      return JSON.parse(sessionStorage.getItem(RESERVE_KEY) || "null");
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function setReserve(data) {
+    if (data) sessionStorage.setItem(RESERVE_KEY, JSON.stringify(data));
+    else sessionStorage.removeItem(RESERVE_KEY);
+  }
+
+  function setBadKeys(keys) {
+    sessionStorage.setItem(BAD_KEYS, JSON.stringify(keys || []));
+  }
+
+  function getBadKeys() {
+    try {
+      const k = JSON.parse(sessionStorage.getItem(BAD_KEYS) || "[]");
+      return Array.isArray(k) ? k : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
   function applyStockRows(rows) {
     if (!Array.isArray(rows) || !rows.length) return;
     const map = {};
@@ -86,7 +128,6 @@
       map[k] = Math.max(0, Number(r.stock) || 0);
     });
     localStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(map));
-
     const list = loadProducts().map((p) => {
       const variants = (p.variants || []).map((v) => {
         const k = rowKey(p.id, v.size, v.color);
@@ -135,10 +176,9 @@
       body: JSON.stringify({ data }),
     });
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.warn("SheetDB seed failed", res.status, errText);
+      console.warn("SheetDB seed failed", await res.text().catch(() => ""));
       throw new Error(
-        "La hoja de Excel está vacía. En la fila 1 pon: key | product_id | sku | name | size | color | stock",
+        "La hoja de Excel está vacía. Fila 1: key | product_id | sku | name | size | color | stock",
       );
     }
     return fetchSheetStock();
@@ -162,10 +202,16 @@
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ stock: String(Math.max(0, nextStock)) }),
     });
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      throw new Error("No se pudo actualizar el stock. Intenta de nuevo.");
-    }
+    if (!res.ok) throw new Error("No se pudo actualizar el stock. Intenta de nuevo.");
+  }
+
+  function stockMapFromRows(rows) {
+    const map = {};
+    rows.forEach((r) => {
+      const k = r.key || rowKey(r.product_id, r.size, r.color);
+      map[k] = Math.max(0, Number(r.stock) || 0);
+    });
+    return map;
   }
 
   function money(n) {
@@ -178,184 +224,329 @@
     return color || s || "—";
   }
 
-  function stockMapFromRows(rows) {
-    const map = {};
-    rows.forEach((r) => {
-      const k = r.key || rowKey(r.product_id, r.size, r.color);
-      map[k] = Math.max(0, Number(r.stock) || 0);
-    });
-    return map;
+  function dismissLeadToast(overlay) {
+    if (!overlay || !overlay.parentNode) return;
+    overlay.classList.remove("on");
+    overlay.classList.add("off");
+    setTimeout(() => overlay.remove(), 200);
   }
 
-  /** Solo verifica stock (sin descontar). Devuelve mensaje de error o null si está bien. */
-  function checkStockMessage(items, map) {
+  /** Modal estilo toast con botones */
+  function showLeadDialog({ kicker, title, message, buttons }) {
+    return new Promise((resolve) => {
+      document.querySelector("[data-lead-toast]")?.remove();
+      const overlay = document.createElement("div");
+      overlay.className = "toast-overlay";
+      overlay.setAttribute("data-lead-toast", "");
+      const btns = (buttons || [])
+        .map(
+          (b, i) =>
+            `<button type="button" class="btn ${b.outline ? "outline" : ""}" data-lead-btn="${i}">${b.label}</button>`,
+        )
+        .join("");
+      overlay.innerHTML = `<div class="toast-card" role="dialog" aria-modal="true">
+        <p class="kicker">${kicker || "Aviso"}</p>
+        <p class="toast-title">${title || ""}</p>
+        ${message ? `<p class="lead-toast-msg">${message}</p>` : ""}
+        <div class="lead-toast-actions">${btns}</div>
+      </div>`;
+      overlay.addEventListener("click", (ev) => {
+        if (ev.target === overlay) {
+          /* no cerrar al fondo: debe elegir */
+        }
+      });
+      overlay.querySelectorAll("[data-lead-btn]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.getAttribute("data-lead-btn"));
+          dismissLeadToast(overlay);
+          resolve(buttons[idx]?.id);
+        });
+      });
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add("on"));
+    });
+  }
+
+  function findInsufficient(items, map) {
+    const bad = [];
     for (const item of items) {
       const size = item.size || "Sin talla";
       const k = rowKey(item.productId, size, item.color);
       const need = Math.max(1, Number(item.qty) || 1);
       const have = map[k];
-      const label =
-        (item.name || "Producto") +
-        " (" +
-        variantNote(size, item.color) +
-        ")";
-
-      if (have == null) {
-        return (
-          "No hay stock registrado en el Excel para:\n\n" +
-          label +
-          "\n\nAgrega esa variante en la hoja o revisa el key."
-        );
-      }
-      if (have < need) {
-        return (
-          "Stock insuficiente para:\n\n" +
-          label +
-          "\n\nDisponible: " +
-          have +
-          "\nEn tu pedido: " +
-          need +
-          "\n\nReduce la cantidad o elige otra variante."
-        );
+      if (have == null || have < need) {
+        bad.push({
+          key: k,
+          item,
+          have: have == null ? 0 : have,
+          need,
+          label:
+            (item.name || "Producto") +
+            " (" +
+            variantNote(size, item.color) +
+            ")",
+        });
       }
     }
-    return null;
+    return bad;
   }
 
-  /** Consulta Excel y valida el carrito. Actualiza caché local. */
-  async function validateCartAgainstSheet(items) {
+  /** Reserva stock al entrar a #/comprar */
+  async function reserveCartStock() {
+    if (getReserve()) return { ok: true, already: true };
+
+    const items = loadCart();
+    if (!items.length) {
+      await showLeadDialog({
+        kicker: "Carrito",
+        title: "Carrito vacío",
+        message: "Agrega productos antes de comprar.",
+        buttons: [{ id: "ok", label: "Entendido" }],
+      });
+      location.hash = "#/carrito";
+      return { ok: false };
+    }
+
     const rows = await fetchSheetStock();
     const map = stockMapFromRows(rows);
     applyStockRows(rows);
-    const msg = checkStockMessage(items, map);
-    if (msg) throw new Error(msg);
-    return map;
-  }
 
-  /** Valida y descuenta en Excel (al confirmar pedido). */
-  async function confirmPurchaseWithSheet(items) {
-    const map = await validateCartAgainstSheet(items);
+    const bad = findInsufficient(items, map);
+    if (bad.length) {
+      setBadKeys(bad.map((b) => b.key));
+      const lines = bad
+        .map(
+          (b) =>
+            "• " +
+            b.label +
+            "\n  Disponible: " +
+            b.have +
+            " · Pedido: " +
+            b.need,
+        )
+        .join("\n\n");
+      const choice = await showLeadDialog({
+        kicker: "Stock",
+        title: "Stock insuficiente",
+        message: lines + "\n\nPuedes editar el carrito o salir.",
+        buttons: [
+          { id: "edit", label: "Editar", outline: true },
+          { id: "leave", label: "Salir" },
+        ],
+      });
+      if (choice === "edit") location.hash = "#/carrito";
+      else location.hash = "#/";
+      return { ok: false, bad };
+    }
+
+    setBadKeys([]);
+    const reserved = [];
 
     for (const item of items) {
       const size = item.size || "Sin talla";
       const k = rowKey(item.productId, size, item.color);
       const need = Math.max(1, Number(item.qty) || 1);
 
-      // Segunda lectura por variante (por si alguien compró al mismo tiempo)
       const freshRows = await fetchSheetStock();
       const freshMap = stockMapFromRows(freshRows);
       const have = freshMap[k];
       if (have == null || have < need) {
         applyStockRows(freshRows);
-        throw new Error(
-          checkStockMessage([item], freshMap) ||
-            "Stock insuficiente. El pedido no se confirmó.",
-        );
+        for (const r of reserved) {
+          try {
+            await patchStock(r.key, r.before);
+          } catch (_) {}
+        }
+        setBadKeys([k]);
+        const label =
+          (item.name || "Producto") +
+          " (" +
+          variantNote(size, item.color) +
+          ")";
+        const choice = await showLeadDialog({
+          kicker: "Stock",
+          title: "Stock insuficiente",
+          message:
+            "• " +
+            label +
+            "\n  Disponible: " +
+            (have == null ? 0 : have) +
+            " · Pedido: " +
+            need +
+            "\n\nPuedes editar el carrito o salir.",
+          buttons: [
+            { id: "edit", label: "Editar", outline: true },
+            { id: "leave", label: "Salir" },
+          ],
+        });
+        if (choice === "edit") location.hash = "#/carrito";
+        else location.hash = "#/";
+        return { ok: false };
       }
 
       const next = Math.max(0, have - need);
       await patchStock(k, next);
-      map[k] = next;
+      reserved.push({ key: k, before: have, qty: need, item });
       freshMap[k] = next;
       applyStockRows(
         Object.keys(freshMap).map((key) => {
-          const parts = key.split("|");
+          const p = key.split("|");
           return {
             key,
-            product_id: parts[0],
-            size: parts[1],
-            color: parts[2],
+            product_id: p[0],
+            size: p[1],
+            color: p[2],
             stock: freshMap[key],
           };
         }),
       );
     }
+
+    setReserve({ items: reserved, at: Date.now() });
+    return { ok: true };
   }
 
-  let scheduled = false;
-  function applyLogo() {
-    document.querySelectorAll("a.logo").forEach((el) => {
-      if (el.getAttribute("aria-label") !== "LEAD BAZAR MILITAR — inicio") {
-        el.setAttribute("aria-label", "LEAD BAZAR MILITAR — inicio");
+  /** Devuelve stock reservado al Excel si el usuario abandona */
+  async function releaseReserve() {
+    const res = getReserve();
+    if (!res || !res.items || !res.items.length) {
+      setReserve(null);
+      return;
+    }
+    for (const r of res.items) {
+      try {
+        const rows = await fetchSheetStock();
+        const map = stockMapFromRows(rows);
+        const current = map[r.key];
+        const restore =
+          current == null ? r.before : current + Number(r.qty || 0);
+        await patchStock(r.key, restore);
+      } catch (e) {
+        console.warn("No se pudo liberar stock", r.key, e);
       }
-      if (!el.querySelector("img.logo-img")) {
-        const svg = el.querySelector("svg");
-        const img = document.createElement("img");
-        img.src = "public/logo.png";
-        img.alt = "LEAD BAZAR MILITAR";
-        img.className = "logo-img";
-        img.width = 36;
-        img.height = 36;
-        if (svg) svg.replaceWith(img);
-        else el.insertBefore(img, el.firstChild);
-      }
-      const name = el.querySelector(".logo-name");
-      if (name) {
-        const strong = name.querySelector("strong");
-        const span = name.querySelector("span");
-        if (strong && strong.textContent !== "LEAD") strong.textContent = "LEAD";
-        if (span && span.textContent !== "BAZAR MILITAR") span.textContent = "BAZAR MILITAR";
+    }
+    setReserve(null);
+    try {
+      await syncStockFromSheet();
+    } catch (_) {}
+  }
+
+  function currentRoute() {
+    const h = (location.hash || "#/").replace(/^#\/?/, "");
+    return (h.split("/")[0] || "").toLowerCase();
+  }
+
+  let leavingGuard = false;
+  let reserving = false;
+
+  async function onEnterComprar() {
+    if (reserving) return;
+    reserving = true;
+    try {
+      await reserveCartStock();
+    } catch (e) {
+      console.error(e);
+      await showLeadDialog({
+        kicker: "Error",
+        title: "No se pudo verificar el stock",
+        message: String(e.message || e),
+        buttons: [{ id: "ok", label: "Entendido" }],
+      });
+      location.hash = "#/carrito";
+    } finally {
+      reserving = false;
+    }
+  }
+
+  async function onLeaveComprar(nextHash) {
+    if (!getReserve() || leavingGuard) {
+      if (nextHash != null) location.hash = nextHash;
+      return;
+    }
+    leavingGuard = true;
+    const choice = await showLeadDialog({
+      kicker: "Pedido en curso",
+      title: "¿Seguro que quieres salir?",
+      message:
+        "Tu stock está reservado por ahora.\nSi sales, otra persona podría comprar esas prendas.",
+      buttons: [
+        { id: "stay", label: "Continuar", outline: true },
+        { id: "leave", label: "Salir" },
+      ],
+    });
+    leavingGuard = false;
+    if (choice === "leave") {
+      await releaseReserve();
+      if (nextHash != null) location.hash = nextHash;
+      else location.hash = "#/";
+    }
+  }
+
+  /** Marca en rojo filas del carrito sin stock suficiente */
+  function markBadCartRows() {
+    const bad = getBadKeys();
+    if (!bad.length) return;
+    const cart = loadCart();
+    document.querySelectorAll(".cart-row").forEach((row, idx) => {
+      const item = cart[idx];
+      if (!item) return;
+      const k = rowKey(item.productId, item.size || "Sin talla", item.color);
+      if (bad.includes(k)) {
+        row.classList.add("stock-bad");
+        const input = row.querySelector('input[type="number"]');
+        if (input) {
+          // max ya lo pone la app; reforzamos desde caché
+          try {
+            const map = JSON.parse(localStorage.getItem(STOCK_CACHE_KEY) || "{}");
+            if (map[k] != null) {
+              input.max = String(Math.max(0, map[k]));
+              if (Number(input.value) > Number(input.max)) {
+                input.value = input.max;
+              }
+            }
+          } catch (_) {}
+        }
       }
     });
   }
 
-  function scheduleLogo() {
-    if (scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(function () {
-      scheduled = false;
-      applyLogo();
-    });
-  }
+  // —— Navegación ——
+  let lastRoute = currentRoute();
 
-  /** Al enviar el formulario (Revisar pedido): consulta stock y avisa qué prenda falta */
-  document.addEventListener(
-    "submit",
-    async function (e) {
-      const form = e.target.closest("[data-checkout]");
-      if (!form || form.dataset.stockChecked === "1") return;
+  window.addEventListener("hashchange", async function () {
+    const route = currentRoute();
+    const prev = lastRoute;
+    lastRoute = route;
 
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-
-      const items = loadCart();
-      if (!items.length) {
-        alert("El carrito está vacío.");
+    if (prev === "comprar" && route !== "comprar") {
+      // interceptar salida: volver a comprar y preguntar
+      if (getReserve()) {
+        leavingGuard = true;
+        location.hash = "#/comprar";
+        lastRoute = "comprar";
+        leavingGuard = false;
+        await onLeaveComprar(route === "" ? "#/" : "#/" + route);
         return;
       }
+    }
 
-      const btn = form.querySelector('button[type="submit"]');
-      const prev = btn ? btn.textContent : "";
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = "Consultando stock…";
-      }
+    if (route === "comprar") {
+      await onEnterComprar();
+    }
+    if (route === "carrito") {
+      setTimeout(markBadCartRows, 50);
+      setTimeout(markBadCartRows, 300);
+    }
+  });
 
-      try {
-        await validateCartAgainstSheet(items);
-        form.dataset.stockChecked = "1";
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = prev;
-        }
-        form.requestSubmit();
-        setTimeout(function () {
-          form.dataset.stockChecked = "";
-        }, 500);
-      } catch (err) {
-        console.error(err);
-        alert(err.message || "No se pudo verificar el stock.");
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = prev;
-        }
-      }
-    },
-    true,
-  );
+  window.addEventListener("beforeunload", function (e) {
+    if (getReserve()) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
 
-  /** Confirmar y abrir WhatsApp: vuelve a consultar, descuenta y confirma */
+  // Confirmar WhatsApp: stock ya reservado → solo mensaje y limpiar
   document.addEventListener(
     "click",
     async function (e) {
@@ -368,17 +559,30 @@
 
       const items = loadCart();
       if (!items.length) {
-        alert("El carrito está vacío.");
+        await showLeadDialog({
+          kicker: "Carrito",
+          title: "Carrito vacío",
+          buttons: [{ id: "ok", label: "Entendido" }],
+        });
         return;
       }
 
       btn.disabled = true;
       btn.dataset.sheetdbHandling = "1";
       const prevText = btn.textContent;
-      btn.textContent = "Verificando stock…";
+      btn.textContent = "Confirmando…";
 
       try {
-        await confirmPurchaseWithSheet(items);
+        // Si no había reserva (caso raro), reservar ahora
+        if (!getReserve()) {
+          const r = await reserveCartStock();
+          if (!r.ok) {
+            btn.disabled = false;
+            btn.textContent = prevText;
+            btn.dataset.sheetdbHandling = "";
+            return;
+          }
+        }
 
         const form = document.querySelector("[data-checkout]");
         const fd = form ? new FormData(form) : null;
@@ -423,22 +627,63 @@
           .filter(Boolean)
           .join("\n");
 
+        setReserve(null);
+        setBadKeys([]);
         localStorage.setItem(CART_KEY, "[]");
         window.location.href =
           "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(msg);
       } catch (err) {
         console.error(err);
-        alert(err.message || "No se pudo confirmar el pedido.");
+        await showLeadDialog({
+          kicker: "Error",
+          title: "No se pudo confirmar",
+          message: String(err.message || err),
+          buttons: [{ id: "ok", label: "Entendido" }],
+        });
         btn.disabled = false;
         btn.textContent = prevText;
         btn.dataset.sheetdbHandling = "";
-        try {
-          await syncStockFromSheet();
-        } catch (_) {}
       }
     },
     true,
   );
+
+  let scheduled = false;
+  function applyLogo() {
+    document.querySelectorAll("a.logo").forEach((el) => {
+      if (el.getAttribute("aria-label") !== "LEAD BAZAR MILITAR — inicio") {
+        el.setAttribute("aria-label", "LEAD BAZAR MILITAR — inicio");
+      }
+      if (!el.querySelector("img.logo-img")) {
+        const svg = el.querySelector("svg");
+        const img = document.createElement("img");
+        img.src = "public/logo.png";
+        img.alt = "LEAD BAZAR MILITAR";
+        img.className = "logo-img";
+        img.width = 36;
+        img.height = 36;
+        if (svg) svg.replaceWith(img);
+        else el.insertBefore(img, el.firstChild);
+      }
+      const name = el.querySelector(".logo-name");
+      if (name) {
+        const strong = name.querySelector("strong");
+        const span = name.querySelector("span");
+        if (strong && strong.textContent !== "LEAD") strong.textContent = "LEAD";
+        if (span && span.textContent !== "BAZAR MILITAR") span.textContent = "BAZAR MILITAR";
+      }
+    });
+    if (currentRoute() === "carrito") markBadCartRows();
+  }
+
+  function scheduleLogo() {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(function () {
+      scheduled = false;
+      applyLogo();
+    });
+  }
 
   async function boot() {
     try {
@@ -469,7 +714,8 @@
           subtree: true,
         });
       }
-      window.addEventListener("hashchange", scheduleLogo);
+      if (currentRoute() === "comprar") onEnterComprar();
+      if (currentRoute() === "carrito") setTimeout(markBadCartRows, 100);
     };
     document.body.appendChild(s);
   }
