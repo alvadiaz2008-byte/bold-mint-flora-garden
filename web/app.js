@@ -6,12 +6,13 @@
   const BAD_KEYS = "lead-stock-bad-v1";
   const SHEETDB = "https://sheetdb.io/api/v1/jrxq3blppmk92";
   const WHATSAPP = "51955802712";
+  const LOGO = "public/logo.webp";
   const app = document.querySelector("#app");
 
   const style = document.createElement("style");
   style.textContent = `
 .hero-bg {
-  background: url("public/logo.png") center/contain no-repeat !important;
+  background: url("${LOGO}") center/contain no-repeat !important;
   background-color: #141611 !important;
   opacity: 0.65 !important;
 }
@@ -65,10 +66,9 @@
   outline: 2px solid #b4544a !important;
   box-shadow: 0 0 0 1px rgba(180, 84, 74, 0.45) !important;
 }
-`;
+`.replace("${LOGO}", LOGO);
   document.head.appendChild(style);
 
-  // Silenciar bip de notificaciones (WebAudio)
   (function muteNotifySound() {
     const Native = window.AudioContext || window.webkitAudioContext;
     if (!Native) return;
@@ -88,7 +88,6 @@
     if (window.webkitAudioContext) window.webkitAudioContext = Wrapped;
   })();
 
-  /** Actualiza etiqueta de stock en ficha de producto tras cambios del carrito */
   function refreshProductStockUI() {
     document.querySelectorAll("form").forEach((f) => {
       if (typeof f._paintStock === "function") {
@@ -318,7 +317,6 @@
 
   async function reserveCartStock() {
     if (getReserve()) return { ok: true, already: true };
-
     const items = loadCart();
     if (!items.length) {
       await showLeadDialog({
@@ -330,11 +328,9 @@
       location.hash = "#/carrito";
       return { ok: false };
     }
-
     const rows = await fetchSheetStock();
     const map = stockMapFromRows(rows);
     applyStockRows(rows);
-
     const bad = findInsufficient(items, map);
     if (bad.length) {
       setBadKeys(bad.map((b) => b.key));
@@ -362,15 +358,12 @@
       else location.hash = "#/";
       return { ok: false, bad };
     }
-
     setBadKeys([]);
     const reserved = [];
-
     for (const item of items) {
       const size = item.size || "Sin talla";
       const k = rowKey(item.productId, size, item.color);
       const need = Math.max(1, Number(item.qty) || 1);
-
       const freshRows = await fetchSheetStock();
       const freshMap = stockMapFromRows(freshRows);
       const have = freshMap[k];
@@ -407,7 +400,6 @@
         else location.hash = "#/";
         return { ok: false };
       }
-
       const next = Math.max(0, have - need);
       await patchStock(k, next);
       reserved.push({ key: k, before: have, qty: need, item });
@@ -425,7 +417,6 @@
         }),
       );
     }
-
     setReserve({ items: reserved, at: Date.now() });
     return { ok: true };
   }
@@ -537,7 +528,6 @@
     const route = currentRoute();
     const prev = lastRoute;
     lastRoute = route;
-
     if (prev === "comprar" && route !== "comprar") {
       if (getReserve()) {
         leavingGuard = true;
@@ -548,10 +538,7 @@
         return;
       }
     }
-
-    if (route === "comprar") {
-      await onEnterComprar();
-    }
+    if (route === "comprar") await onEnterComprar();
     if (route === "carrito") {
       setTimeout(markBadCartRows, 50);
       setTimeout(markBadCartRows, 300);
@@ -565,7 +552,6 @@
     }
   });
 
-  // Al quitar del carrito (drawer) o cerrar el drawer → refrescar stock en la ficha
   document.addEventListener(
     "click",
     function (e) {
@@ -601,11 +587,9 @@
     async function (e) {
       const btn = e.target.closest("[data-preview-send]");
       if (!btn || btn.dataset.sheetdbHandling === "1") return;
-
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-
       const items = loadCart();
       if (!items.length) {
         await showLeadDialog({
@@ -615,12 +599,10 @@
         });
         return;
       }
-
       btn.disabled = true;
       btn.dataset.sheetdbHandling = "1";
       const prevText = btn.textContent;
       btn.textContent = "Confirmando…";
-
       try {
         if (!getReserve()) {
           const r = await reserveCartStock();
@@ -631,7 +613,6 @@
             return;
           }
         }
-
         const form = document.querySelector("[data-checkout]");
         const fd = form ? new FormData(form) : null;
         const name = fd ? String(fd.get("name") || "").trim() : "";
@@ -639,7 +620,6 @@
         const dni = fd ? String(fd.get("dni") || "").trim() : "";
         const address = fd ? String(fd.get("address") || "").trim() : "";
         const ref = fd ? String(fd.get("ref") || "").trim() : "";
-
         const total = money(
           items.reduce(
             (n, i) => n + Number(i.priceSoles || 0) * Number(i.qty || 0),
@@ -674,7 +654,6 @@
         ]
           .filter(Boolean)
           .join("\n");
-
         setReserve(null);
         setBadKeys([]);
         localStorage.setItem(CART_KEY, "[]");
@@ -705,13 +684,16 @@
       if (!el.querySelector("img.logo-img")) {
         const svg = el.querySelector("svg");
         const img = document.createElement("img");
-        img.src = "public/logo.png";
+        img.src = LOGO;
         img.alt = "LEAD BAZAR MILITAR";
         img.className = "logo-img";
         img.width = 36;
         img.height = 36;
         if (svg) svg.replaceWith(img);
         else el.insertBefore(img, el.firstChild);
+      } else {
+        const img = el.querySelector("img.logo-img");
+        if (img && !img.src.includes("logo.webp")) img.src = LOGO;
       }
       const name = el.querySelector(".logo-name");
       if (name) {
@@ -743,13 +725,11 @@
         }
       }
     } catch (_) {}
-
     try {
       await syncStockFromSheet();
     } catch (e) {
       console.warn("Stock SheetDB:", e);
     }
-
     const s = document.createElement("script");
     s.src =
       "https://cdn.jsdelivr.net/gh/alvadiaz2008-byte/bold-mint-flora-garden@fe6d9b176af50f8546c6597d913a090ddcbebb69/web/app.js";
