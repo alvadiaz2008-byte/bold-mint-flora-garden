@@ -653,15 +653,7 @@
       const prevText = btn.textContent;
       btn.textContent = "Confirmando…";
       try {
-        if (!getReserve()) {
-          const r = await reserveCartStock();
-          if (!r.ok) {
-            btn.disabled = false;
-            btn.textContent = prevText;
-            btn.dataset.sheetdbHandling = "";
-            return;
-          }
-        }
+        // Stock ya reservado al entrar a #/comprar — no reconsultar ni restar de nuevo
         const form = document.querySelector("[data-checkout]");
         const fd = form ? new FormData(form) : null;
         const name = fd ? String(fd.get("name") || "").trim() : "";
