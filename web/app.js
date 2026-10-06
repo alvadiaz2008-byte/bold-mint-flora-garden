@@ -4,6 +4,7 @@
   const STOCK_CACHE_KEY = "lead-stock-cache-v1";
   const RESERVE_KEY = "lead-stock-reserve-v1";
   const BAD_KEYS = "lead-stock-bad-v1";
+  const RESERVE_TTL_MS = 15 * 60 * 1000; // 15 min: si cierran la pestana, el stock se libera
   const SHEETDB = "https://sheetdb.io/api/v1/jrxq3blppmk92";
   const WHATSAPP = "51955802712";
   const LOGO = "public/logo.webp";
@@ -169,6 +170,48 @@
     }
   }
 
+  function touchReserve() {
+    const r = getReserve();
+    if (!r) return;
+    r.at = Date.now();
+    setReserve(r);
+  }
+
+  function isReserveExpired(r) {
+    if (!r || !r.at) return true;
+    return Date.now() - Number(r.at) > RESERVE_TTL_MS;
+  }
+
+  /** Stock local = sheet + cantidades reservadas (para que el form original no diga "agotado") */
+  function applyLocalWithReserve(sheetMap) {
+    const map = Object.assign({}, sheetMap || {});
+    const res = getReserve();
+    if (res && res.items) {
+      res.items.forEach((r) => {
+        const cur = map[r.key];
+        const qty = Number(r.qty) || 0;
+        if (cur == null) map[r.key] = Number(r.before) || qty;
+        else map[r.key] = cur + qty;
+      });
+    }
+    localStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(map));
+    const list = loadProducts().map((p) => {
+      const variants = (p.variants || []).map((v) => {
+        const k = rowKey(p.id, v.size, v.color);
+        if (Object.prototype.hasOwnProperty.call(map, k)) {
+          return Object.assign({}, v, { stock: map[k] });
+        }
+        return v;
+      });
+      const stock = variants.reduce(
+        (n, v) => n + Math.max(0, Number(v.stock) || 0),
+        0,
+      );
+      return Object.assign({}, p, { variants: variants, stock: stock });
+    });
+    saveProducts(list);
+  }
+
   function applyStockRows(rows) {
     if (!Array.isArray(rows) || !rows.length) return;
     const map = {};
@@ -227,7 +270,7 @@
     if (!res.ok) {
       console.warn("SheetDB seed failed", await res.text().catch(() => ""));
       throw new Error(
-        "La hoja de Excel está vacía. Fila 1: key | product_id | sku | name | size | color | stock",
+        "La hoja de Excel esta vacia. Fila 1: key | product_id | sku | name | size | color | stock",
       );
     }
     return fetchSheetStock();
@@ -340,7 +383,7 @@
     if (!items.length) {
       await showLeadDialog({
         kicker: "Carrito",
-        title: "Carrito vacío",
+        title: "Carrito vacio",
         message: "Agrega productos antes de comprar.",
         buttons: [{ id: "ok", label: "Entendido" }],
       });
@@ -441,6 +484,17 @@
       );
     }
     setReserve({ items: reserved, at: Date.now() });
+    // Local muestra stock "antes de reservar" para no bloquear el formulario original
+    try {
+      const rows2 = await fetchSheetStock();
+      applyLocalWithReserve(stockMapFromRows(rows2));
+    } catch (_) {
+      const map2 = {};
+      reserved.forEach((r) => {
+        map2[r.key] = Number(r.before) || 0;
+      });
+      applyLocalWithReserve(map2);
+    }
     return { ok: true };
   }
 
@@ -479,6 +533,35 @@
     }
   }
 
+  /** Liberacion al cerrar pestana (fetch keepalive; no espera respuesta) */
+  function releaseReserveKeepalive() {
+    const res = getReserve();
+    if (!res || !res.items || !res.items.length) return;
+    setReserve(null);
+    res.items.forEach((r) => {
+      const url = SHEETDB + "/key/" + encodeURIComponent(r.key);
+      const body = JSON.stringify({
+        stock: String(Math.max(0, Number(r.before) || 0)),
+      });
+      try {
+        fetch(url, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: body,
+          keepalive: true,
+        }).catch(function () {});
+      } catch (_) {}
+    });
+  }
+
+  async function expireStaleReserve() {
+    const res = getReserve();
+    if (!res) return;
+    if (isReserveExpired(res)) {
+      await releaseReserve();
+    }
+  }
+
   function currentRoute() {
     const h = (location.hash || "#/").replace(/^#\/?/, "");
     return (h.split("/")[0] || "").toLowerCase();
@@ -491,7 +574,9 @@
     if (reserving) return;
     reserving = true;
     try {
+      await expireStaleReserve();
       await reserveCartStock();
+      touchReserve();
     } catch (e) {
       console.error(e);
       await showLeadDialog({
@@ -516,7 +601,7 @@
       kicker: "Pedido en curso",
       title: "¿Seguro que quieres salir?",
       message:
-        "Tu stock está reservado por ahora.\nSi sales, otra persona podría comprar esas prendas.",
+        "Tu stock esta reservado por ahora.\nSi sales, otra persona podria comprar esas prendas.",
       buttons: [
         { id: "stay", label: "Continuar", outline: true },
         { id: "leave", label: "Salir" },
@@ -587,10 +672,27 @@
 
   window.addEventListener("beforeunload", function (e) {
     if (getReserve()) {
+      releaseReserveKeepalive();
       e.preventDefault();
       e.returnValue = "";
     }
   });
+
+  window.addEventListener("pagehide", function () {
+    if (getReserve()) releaseReserveKeepalive();
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden" && getReserve()) {
+      touchReserve();
+    } else if (document.visibilityState === "visible") {
+      expireStaleReserve();
+    }
+  });
+
+  setInterval(function () {
+    if (currentRoute() === "comprar" && getReserve()) touchReserve();
+  }, 60000);
 
   document.addEventListener(
     "click",
@@ -623,6 +725,50 @@
   });
 
   document.addEventListener(
+    "submit",
+    function (e) {
+      const form = e.target && e.target.closest && e.target.closest("[data-checkout]");
+      if (!form) return;
+      const res = getReserve();
+      if (!res || !res.items || !res.items.length) return;
+      try {
+        const products = loadProducts();
+        const byId = {};
+        products.forEach((p) => {
+          byId[String(p.id)] = p;
+        });
+        res.items.forEach((r) => {
+          const item = r.item || {};
+          const p = byId[String(item.productId)];
+          if (!p) return;
+          const size = item.size || "Sin talla";
+          const color = item.color || "";
+          const variants = (p.variants || []).map((v) => {
+            if (v.size === size && v.color === color) {
+              return Object.assign({}, v, {
+                stock: Math.max(
+                  Number(v.stock) || 0,
+                  Number(r.before) || Number(r.qty) || 0,
+                ),
+              });
+            }
+            return v;
+          });
+          p.variants = variants;
+          p.stock = variants.reduce(
+            (n, v) => n + Math.max(0, Number(v.stock) || 0),
+            0,
+          );
+        });
+        saveProducts(products);
+      } catch (err) {
+        console.warn("pre-submit stock restore", err);
+      }
+    },
+    true,
+  );
+
+  document.addEventListener(
     "click",
     async function (e) {
       const btn = e.target.closest("[data-preview-send]");
@@ -634,15 +780,15 @@
       if (!items.length) {
         await showLeadDialog({
           kicker: "Carrito",
-          title: "Carrito vacío",
+          title: "Carrito vacio",
           buttons: [{ id: "ok", label: "Entendido" }],
         });
         return;
       }
       if (window.LeadMap && !window.LeadMap.hasLocation()) {
         await showLeadDialog({
-          kicker: "Ubicación",
-          title: "Falta la ubicación",
+          kicker: "Ubicacion",
+          title: "Falta la ubicacion",
           message: "Elige el punto de entrega en el mapa de Iquitos.",
           buttons: [{ id: "ok", label: "Entendido" }],
         });
@@ -689,10 +835,10 @@
           "",
           "Comprador",
           "Nombre: " + name,
-          "Teléfono: " + phone,
+          "Telefono: " + phone,
           dni ? "DNI: " + dni : null,
           "Ciudad: Iquitos, Loreto",
-          "Dirección: " + address,
+          "Direccion: " + address,
           mapsLink ? "Google Maps: " + mapsLink : null,
           ref ? "Referencia: " + ref : null,
         ]
@@ -771,7 +917,14 @@
       }
     } catch (_) {}
     try {
+      await expireStaleReserve();
       await syncStockFromSheet();
+      if (getReserve()) {
+        try {
+          const rows = await fetchSheetStock();
+          applyLocalWithReserve(stockMapFromRows(rows));
+        } catch (_) {}
+      }
     } catch (e) {
       console.warn("Stock SheetDB:", e);
     }
@@ -801,7 +954,7 @@
 
   if (app) {
     app.innerHTML =
-      '<div class="wrap" style="padding:3rem 1rem;color:#ecebe3"><p>LEAD BAZAR MILITAR</p><h1>Cargando catálogo…</h1></div>';
+      '<div class="wrap" style="padding:3rem 1rem;color:#ecebe3"><p>LEAD BAZAR MILITAR</p><h1>Cargando catalogo…</h1></div>';
   }
   boot();
 })();
