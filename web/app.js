@@ -5,7 +5,12 @@
   const RESERVE_KEY = "lead-stock-reserve-v1";
   const BAD_KEYS = "lead-stock-bad-v1";
   const RESERVE_TTL_MS = 15 * 60 * 1000;
-  const SHEETDB = "https://sheetdb.io/api/v1/jrxq3blppmk92";
+  // APIs SheetDB en orden de prioridad (anade mas URLs al final si hace falta)
+  const SHEETDB_URLS = [
+    "https://sheetdb.io/api/v1/jrxq3blppmk92",
+    "https://sheetdb.io/api/v1/hqbpwzelphd4c",
+  ];
+  const SHEETDB_ACTIVE_KEY = "lead-sheetdb-active-v1";
   const WHATSAPP = "51955802712";
   const LOGO = "public/logo.webp";
   const app = document.querySelector("#app");
@@ -236,9 +241,63 @@
     saveProducts(list);
   }
 
+  function getPreferredSheetIndex() {
+    try {
+      const n = Number(sessionStorage.getItem(SHEETDB_ACTIVE_KEY));
+      if (Number.isFinite(n) && n >= 0 && n < SHEETDB_URLS.length) return n;
+    } catch (_) {}
+    return 0;
+  }
+
+  function setPreferredSheetIndex(i) {
+    try {
+      sessionStorage.setItem(SHEETDB_ACTIVE_KEY, String(i));
+    } catch (_) {}
+  }
+
+  function orderedSheetUrls() {
+    const start = getPreferredSheetIndex();
+    const out = [];
+    for (let i = 0; i < SHEETDB_URLS.length; i++) {
+      out.push(SHEETDB_URLS[(start + i) % SHEETDB_URLS.length]);
+    }
+    return out;
+  }
+
+  async function sheetFetch(path, options) {
+    const opts = Object.assign({ cache: "no-store" }, options || {});
+    let lastErr = null;
+    const urls = orderedSheetUrls();
+    for (let i = 0; i < urls.length; i++) {
+      const base = urls[i];
+      const url = path ? base + path : base;
+      try {
+        const res = await fetch(url, opts);
+        if (res.ok) {
+          const idx = SHEETDB_URLS.indexOf(base);
+          if (idx >= 0) setPreferredSheetIndex(idx);
+          return res;
+        }
+        if (res.status === 429 || res.status === 402 || res.status === 403 || res.status >= 500) {
+          lastErr = new Error("SheetDB " + res.status + " en " + base);
+          console.warn(lastErr.message);
+          continue;
+        }
+        lastErr = new Error("SheetDB error " + res.status);
+        if (res.status === 404 && path) {
+          throw lastErr;
+        }
+        continue;
+      } catch (e) {
+        lastErr = e;
+        console.warn("SheetDB fallo", base, e);
+      }
+    }
+    throw lastErr || new Error("No se pudo conectar con la base de datos.");
+  }
+
   async function fetchSheetStock() {
-    const res = await fetch(SHEETDB, { cache: "no-store" });
-    if (!res.ok) throw new Error("No se pudo consultar el stock. Intenta de nuevo.");
+    const res = await sheetFetch("");
     const rows = await res.json();
     return Array.isArray(rows) ? rows : [];
   }
@@ -261,13 +320,20 @@
       });
     });
     if (!data.length) return rows;
-    const res = await fetch(SHEETDB, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ data }),
-    });
-    if (!res.ok) {
-      console.warn("SheetDB seed failed", await res.text().catch(() => ""));
+    try {
+      const res = await sheetFetch("", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ data }),
+      });
+      if (!res.ok) {
+        console.warn("SheetDB seed failed", await res.text().catch(() => ""));
+        throw new Error(
+          "La hoja de Excel esta vacia. Fila 1: key | product_id | sku | name | size | color | stock",
+        );
+      }
+    } catch (e) {
+      console.warn("SheetDB seed failed", e);
       throw new Error(
         "La hoja de Excel esta vacia. Fila 1: key | product_id | sku | name | size | color | stock",
       );
@@ -287,8 +353,7 @@
   }
 
   async function patchStock(key, nextStock) {
-    const url = SHEETDB + "/key/" + encodeURIComponent(key);
-    const res = await fetch(url, {
+    const res = await sheetFetch("/key/" + encodeURIComponent(key), {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ stock: String(Math.max(0, nextStock)) }),
@@ -536,18 +601,19 @@
     if (!res || !res.items || !res.items.length) return;
     setReserve(null);
     res.items.forEach((r) => {
-      const url = SHEETDB + "/key/" + encodeURIComponent(r.key);
       const body = JSON.stringify({
         stock: String(Math.max(0, Number(r.before) || 0)),
       });
-      try {
-        fetch(url, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: body,
-          keepalive: true,
-        }).catch(function () {});
-      } catch (_) {}
+      SHEETDB_URLS.forEach(function (base) {
+        try {
+          fetch(base + "/key/" + encodeURIComponent(r.key), {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: body,
+            keepalive: true,
+          }).catch(function () {});
+        } catch (_) {}
+      });
     });
   }
 
@@ -1049,7 +1115,7 @@
         notice.className = "notice";
         notice.setAttribute("data-admin-notice", "");
         notice.textContent =
-          "Solo consulta. El catálogo se edita en catalog.json y el stock en la base de datos.";
+          "Solo consulta. El catalogo se edita en catalog.json y el stock en la base de datos.";
         form.parentNode.insertBefore(notice, form);
       }
       var title = document.getElementById("form-title");
