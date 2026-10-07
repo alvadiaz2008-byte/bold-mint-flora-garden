@@ -4,7 +4,7 @@
   const STOCK_CACHE_KEY = "lead-stock-cache-v1";
   const RESERVE_KEY = "lead-stock-reserve-v1";
   const BAD_KEYS = "lead-stock-bad-v1";
-  const RESERVE_TTL_MS = 15 * 60 * 1000; // 15 min: si cierran la pestana, el stock se libera
+  const RESERVE_TTL_MS = 15 * 60 * 1000;
   const SHEETDB = "https://sheetdb.io/api/v1/jrxq3blppmk92";
   const WHATSAPP = "51955802712";
   const LOGO = "public/logo.webp";
@@ -182,7 +182,6 @@
     return Date.now() - Number(r.at) > RESERVE_TTL_MS;
   }
 
-  /** Stock local = sheet + cantidades reservadas (para que el form original no diga "agotado") */
   function applyLocalWithReserve(sheetMap) {
     const map = Object.assign({}, sheetMap || {});
     const res = getReserve();
@@ -484,7 +483,6 @@
       );
     }
     setReserve({ items: reserved, at: Date.now() });
-    // Local muestra stock "antes de reservar" para no bloquear el formulario original
     try {
       const rows2 = await fetchSheetStock();
       applyLocalWithReserve(stockMapFromRows(rows2));
@@ -533,7 +531,6 @@
     }
   }
 
-  /** Liberacion al cerrar pestana (fetch keepalive; no espera respuesta) */
   function releaseReserveKeepalive() {
     const res = getReserve();
     if (!res || !res.items || !res.items.length) return;
@@ -799,7 +796,6 @@
       const prevText = btn.textContent;
       btn.textContent = "Confirmando…";
       try {
-        // Stock ya reservado al entrar a #/comprar — no reconsultar ni restar de nuevo
         const form = document.querySelector("[data-checkout]");
         const fd = form ? new FormData(form) : null;
         const name = fd ? String(fd.get("name") || "").trim() : "";
@@ -906,6 +902,183 @@
     });
   }
 
+  const ADMIN_PASS = "955802712";
+  const ADMIN_SESSION = "atlas-tactico-admin";
+
+  document.addEventListener(
+    "submit",
+    function (e) {
+      const form = e.target && e.target.closest && e.target.closest("[data-login]");
+      if (!form) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      const password = new FormData(form).get("password");
+      const err = form.querySelector("[data-err]");
+      if (String(password) === ADMIN_PASS) {
+        sessionStorage.setItem(ADMIN_SESSION, "1");
+        location.hash = "#/admin";
+        location.reload();
+      } else if (err) {
+        err.hidden = false;
+        err.textContent = "Contraseña incorrecta.";
+      }
+    },
+    true,
+  );
+
+  document.addEventListener(
+    "submit",
+    function (e) {
+      if (e.target && e.target.closest && e.target.closest("[data-admin-form]")) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    },
+    true,
+  );
+
+  document.addEventListener(
+    "click",
+    function (e) {
+      const del = e.target.closest && e.target.closest("[data-del]");
+      if (del) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    },
+    true,
+  );
+
+  function setFormReadonly(form, on) {
+    if (!form) return;
+    form.querySelectorAll("input, select, textarea, button").forEach(function (el) {
+      if (el.hasAttribute("data-view-close")) {
+        el.disabled = false;
+        el.hidden = false;
+        return;
+      }
+      if (el.tagName === "BUTTON") {
+        el.hidden = !!on;
+        el.disabled = !!on;
+        return;
+      }
+      if (on) {
+        el.setAttribute("readonly", "");
+        el.setAttribute("disabled", "");
+      } else {
+        el.removeAttribute("readonly");
+        el.removeAttribute("disabled");
+      }
+    });
+  }
+
+  function openProductViewer(id) {
+    const form = document.querySelector("[data-admin-form]");
+    if (!form) return;
+    const list = loadProducts();
+    const p = list.find(function (x) {
+      return String(x.id) === String(id);
+    });
+    if (!p) return;
+    form.hidden = false;
+    setFormReadonly(form, false);
+    if (form.name) form.name.value = p.name || "";
+    if (form.category) form.category.value = p.category || "";
+    if (form.priceSoles) form.priceSoles.value = p.priceSoles || "";
+    if (form.description) form.description.value = p.description || "";
+    if (form.material) form.material.value = p.material || "";
+    if (form.id) form.id.value = p.id;
+    var title = document.getElementById("form-title");
+    if (title) title.textContent = "Detalle del producto";
+    var inv = form.querySelector("[data-inv]");
+    if (inv && p.variants && p.variants.length) {
+      inv.innerHTML = p.variants
+        .map(function (v) {
+          return (
+            '<div class="notice" style="margin:0.35rem 0">' +
+            (v.size && v.size !== "Sin talla" ? v.size + " · " : "") +
+            (v.color || "") +
+            " — stock: " +
+            (v.stock != null ? v.stock : "—") +
+            "</div>"
+          );
+        })
+        .join("");
+    }
+    var live = form.querySelector("[data-img-live]");
+    if (live && p.images && p.images.length) {
+      live.innerHTML = p.images
+        .map(function (src) {
+          return '<img src="' + src + '" alt="" style="max-width:5rem;border-radius:0.4rem;margin:0.25rem" />';
+        })
+        .join("");
+      live.removeAttribute("hidden");
+    }
+    var actions = form.querySelector('button[type="submit"]');
+    if (actions) {
+      actions.type = "button";
+      actions.textContent = "Cerrar";
+      actions.setAttribute("data-view-close", "");
+      actions.onclick = function () {
+        form.hidden = true;
+      };
+    }
+    var cancel = form.querySelector("[data-reset-form]");
+    if (cancel) {
+      cancel.textContent = "Cerrar";
+      cancel.setAttribute("data-view-close", "");
+      cancel.onclick = function () {
+        form.hidden = true;
+      };
+    }
+    setFormReadonly(form, true);
+    form.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function polishAdminViewer() {
+    if (currentRoute() !== "admin") return;
+    var form = document.querySelector("[data-admin-form]");
+    if (form && !form.dataset.viewerMode) {
+      form.dataset.viewerMode = "1";
+      form.hidden = true;
+      if (!document.querySelector("[data-admin-notice]")) {
+        var notice = document.createElement("p");
+        notice.className = "notice";
+        notice.setAttribute("data-admin-notice", "");
+        notice.textContent =
+          "Solo consulta. El catálogo se edita en catalog.json y el stock en la base de datos.";
+        form.parentNode.insertBefore(notice, form);
+      }
+      var title = document.getElementById("form-title");
+      if (title) title.textContent = "Detalle del producto";
+    }
+    document.querySelectorAll("[data-edit]").forEach(function (btn) {
+      if (btn.dataset.viewBound) return;
+      btn.dataset.viewBound = "1";
+      var id = btn.getAttribute("data-edit");
+      btn.removeAttribute("data-edit");
+      btn.setAttribute("data-view", id);
+      btn.textContent = "Ver";
+      btn.className = "btn outline";
+      btn.addEventListener(
+        "click",
+        function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          ev.stopImmediatePropagation();
+          openProductViewer(id);
+        },
+        true,
+      );
+    });
+    document.querySelectorAll("[data-del]").forEach(function (btn) {
+      btn.remove();
+    });
+  }
+
   async function boot() {
     try {
       const res = await fetch("web/catalog.json", { cache: "no-store" });
@@ -935,11 +1108,15 @@
       applyLogo();
       const root = document.querySelector("#app");
       if (root) {
-        new MutationObserver(scheduleLogo).observe(root, {
+        new MutationObserver(function () {
+          scheduleLogo();
+          polishAdminViewer();
+        }).observe(root, {
           childList: true,
           subtree: true,
         });
       }
+      polishAdminViewer();
       if (currentRoute() === "comprar") {
         onEnterComprar();
         if (window.LeadMap) {
