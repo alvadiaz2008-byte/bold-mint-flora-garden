@@ -11,7 +11,7 @@
     "https://sheetdb.io/api/v1/hqbpwzelphd4c",
   ];
   const SHEETDB_ACTIVE_KEY = "lead-sheetdb-active-v1";
-  const WHATSAPP = "51955802712";
+  const WHATSAPP = "51947978594";
   const LOGO = "public/logo.webp";
   const app = document.querySelector("#app");
 
